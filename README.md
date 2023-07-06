@@ -1,6 +1,6 @@
 # AIXplorerNavigation
 
-![alt text]([http://url/to/img.png](https://github.com/Raggames/AIXplorerNavigation/blob/main/Videos/AIXplorer.png))
+![Screenshot](https://github.com/Raggames/AIXplorerNavigation/blob/main/Videos/AIXplorer.png)
 
 With procedurally generated terrains, NavMesh baking can be a big performance issue. 
 I encountered this situation while working on my my multiplayer DungeonCrawler/Exploration project.
