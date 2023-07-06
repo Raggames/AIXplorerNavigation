@@ -9,6 +9,13 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 
+
+public static class NavigationCoreEventHandler
+{
+    public static event Action<NavigationCore, Node> OnNodeStateUpdate;
+    public static void NodeStateUpdateRequest(NavigationCore navigationCore, Node node) => OnNodeStateUpdate?.Invoke(navigationCore, node);    
+}
+
 [ExecuteInEditMode]
 public class NavigationCore : MonoBehaviour
 {
@@ -63,19 +70,28 @@ public class NavigationCore : MonoBehaviour
             if ((WalkableLayers & (1 << hit.collider.gameObject.layer)) != 0)
             {
                 // yup
-                _grid[x, y].CellType = CellType.Walkable;
+                _grid[x, y].NodeState = NodeState.Walkable;
             }
             else
             {
                 // nope
-                _grid[x, y].CellType = CellType.Unwalkable;
+                _grid[x, y].NodeState = NodeState.Unwalkable;
             }
         }
 
         return _grid[x, y];
     }
 
-    #region Cells operations
+    public void UpdateNodeStateOnWorldPosition(Vector3 position, NodeState nodeState)
+    {
+        UpdateNodeStateOnWorldPosition(WorldToGridPosition(position), nodeState);
+    }
+
+    public void UpdateNodeStateOnWorldPosition(Vector2Int coordinates, NodeState nodeState)
+    {
+        _grid[coordinates.x, coordinates.y].NodeState = nodeState;
+        NavigationCoreEventHandler.NodeStateUpdateRequest(this, _grid[coordinates.x, coordinates.y]);
+    }
 
     public List<Node> FindNodesInRange(Vector3 position, float range = 5)
     {
@@ -154,14 +170,6 @@ public class NavigationCore : MonoBehaviour
         }
         return closest;
     }
-
-    /*public async Task<Node> FindClosestNodeAsync(Vector3 position)
-    {
-        //return await Task.Run(() => FindClosestNode(position));
-    }*/
-
-
-    #endregion
 
     public Vector3 GridToWorldPositionFlattened(int x, int z)
     {
@@ -367,7 +375,7 @@ public class NavigationCore : MonoBehaviour
 
                             if (n != null)
                             {
-                                if (n.CellType == CellType.Walkable)
+                                if (n.NodeState == NodeState.Walkable)
                                 {
                                     if (DrawWalkable)
                                     {

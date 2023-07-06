@@ -78,7 +78,7 @@ namespace Atomix.Pathfinding
                         continue;
                     }
 
-                    if (closedSet.Contains(neighbour) || neighbour.CellType == CellType.Unwalkable)
+                    if (closedSet.Contains(neighbour) || neighbour.NodeState == NodeState.Unwalkable)
                     {
                         continue;
                     }

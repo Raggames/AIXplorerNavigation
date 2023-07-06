@@ -29,9 +29,13 @@ namespace Atomix.Core
         private CharacterController _characterController;
 
         private bool _isNavigating = false;
+        private List<Node> _currentPath = new List<Node>();
+        private Vector3 _currentDestination;
+        private Vector2Int _currentPosition;
 
         public Transform DebugDestination;
-        public int Debug_SearchAreaMultiplier;
+        public float SearchAreaMultiplier;
+        public float SearchAreaDecay = 5;
 
         private void Awake()
         {
@@ -48,18 +52,50 @@ namespace Atomix.Core
             _pathfinder.Initialize(navigationCore);
         }
 
+        /*private void OnEnable()
+        {
+            NavigationCoreEventHandler.OnNodeStateUpdate += NavigationCoreEventHandler_OnNodeStateUpdate;       
+        }
+
+        private void OnDisable()
+        {
+            NavigationCoreEventHandler.OnNodeStateUpdate -= NavigationCoreEventHandler_OnNodeStateUpdate;
+        }*/
+
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.N))
             {
                 StopNavigation();
-                NavigateTo(DebugDestination.position, (result) => Debug.Log(result));
+                NavigateTo(DebugDestination.position, (result) => Debug.Log(result), 0, 0);
             }
+
+           /* Vector2Int pos = NavigationCore.WorldToGridPosition(transform.position);
+
+            if(pos != _currentPosition)
+            {
+                NavigationCore.UpdateNodeStateOnWorldPosition(_currentPosition, NodeState.Walkable);
+                NavigationCore.UpdateNodeStateOnWorldPosition(pos, NodeState.Unwalkable);
+            }
+
+            _currentPosition = pos;*/
         }
 
-        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, int searchAreaMultiplier = 0, int searchIterations = 0)
+
+        /*private void NavigationCoreEventHandler_OnNodeStateUpdate(NavigationCore arg1, Node arg2)
         {
-            Debug_SearchAreaMultiplier = searchAreaMultiplier;
+            if (_isNavigating && arg1 == NavigationCore && _currentPath.Contains(arg2))
+            {
+                StopNavigation();
+                NavigateTo(_currentDestination, null);
+            }
+        }*/
+
+
+        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, float searchAreaMultiplier = 0, int searchIterations = 0)
+        {
+            SearchAreaMultiplier = searchAreaMultiplier;
+            _currentDestination = destination; 
 
             if (searchIterations == 0)
                 _onArrivedEndPath = arrivedAtDestination;
@@ -77,7 +113,7 @@ namespace Atomix.Core
             {
                 if (path != null)
                 {
-                    if(path.Count > 0)
+                    if (path.Count > 0)
                     {
                         if (found_complete_path)
                         {
@@ -106,12 +142,12 @@ namespace Atomix.Core
                                 {
                                     Debug.LogError("Arrived at end of partial path. Analyse navmesh and retry.");
 
-                                    NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * searchAreaMultiplier);
+                                    NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
 
-                                    searchAreaMultiplier++;
+                                    SearchAreaMultiplier++;
 
-                                    NavigateTo(destination, arrivedAtDestination, searchAreaMultiplier, searchIterations);
-                                }                              
+                                    NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, searchIterations);
+                                }
 
                             }));
                         }
@@ -122,16 +158,18 @@ namespace Atomix.Core
                         if (_currentDistance <= WaypointThreshold)
                         {
                             arrivedAtDestination.Invoke(true);
+                            Debug.LogError("Path count was 0. Arrived at destination.");
+
                         }
                         else
                         {
                             // Probly no path found to destination. Search around 
                             Debug.LogError("Path count was 0. Try search bigger area and retry.");
-                            NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * searchAreaMultiplier);
-                            searchAreaMultiplier++;
-                            NavigateTo(destination, arrivedAtDestination, searchAreaMultiplier, searchIterations);
+                            NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
+                            SearchAreaMultiplier++;
+                            NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, searchIterations);
                         }
-                       
+
                     }
 
                 }
@@ -203,13 +241,20 @@ namespace Atomix.Core
                     _direction = Vector3.SmoothDamp(_oldDir, _direction, ref _turnDampingVelocity, TurnSmoothTime);
 
                     Vector2 _testHorizontalVelocity = new Vector2(_direction.x, _direction.z);
-                    if(_testHorizontalVelocity.magnitude <= .05f)
+                    if (_testHorizontalVelocity.magnitude <= .05f)
                     {
                         Debug.LogError("Overshooted waypoint ?");
+
+                        StopNavigation();
+                        arrivedAtDestination.Invoke(false);
+                        yield break;
                     }
 
                     _characterController.Move(_direction * MaximumSpeed * Time.deltaTime + Vector3.down * (10 - _direction.y * 10f) * Time.deltaTime);
                     FixLookAt(_steerPosition);
+
+                    if (SearchAreaMultiplier > 0)
+                        SearchAreaMultiplier -= Time.deltaTime * SearchAreaDecay;
 
                     yield return null;
                 }

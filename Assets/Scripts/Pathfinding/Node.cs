@@ -2,7 +2,7 @@
 
 namespace Atomix.Pathfinding
 {
-    public enum CellType
+    public enum NodeState
     {
         Walkable,
         Unwalkable,
@@ -13,8 +13,8 @@ namespace Atomix.Pathfinding
         public Vector3Int Position;
         public Vector3 WorldPosition;
 
-        private CellType _cellType;
-        public CellType CellType
+        private NodeState _cellType;
+        public NodeState NodeState
         {
             get
             {
