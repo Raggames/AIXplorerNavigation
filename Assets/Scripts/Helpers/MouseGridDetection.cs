@@ -15,6 +15,13 @@ namespace Atomix.Helpers
         public float DetectionRadius = 5;
         public List<Vector2Int> currentNodesInRadius = new List<Vector2Int>();
 
+        private NavigationCore _navigationCore;
+
+        private void Awake()
+        {
+            _navigationCore = FindObjectOfType<NavigationCore>();
+        }
+
         private void Update()
         {
             if (Input.GetKey(KeyCode.LeftControl))
@@ -30,16 +37,11 @@ namespace Atomix.Helpers
                     Debug.DrawLine(hitDebug.point - Vector3.right * 1f, hitDebug.point + Vector3.right * 1f, Color.red, .1f);
                     Debug.DrawLine(hitDebug.point - Vector3.up * 1f, hitDebug.point + Vector3.up * 1f, Color.red, .1f);
 
-                    currentNodesInRadius = NavigationCore.Instance.FindNodesPositionsInRange(hitDebug.point, DetectionRadius);
-                    NavigationCore.Instance.CreatePotentialNodesInRange(hitDebug.point, DetectionRadius);
-
-                    NavigationCore.Instance.CurrentClosestNodePosition = NavigationCore.Instance.WorldToGridPosition(hitDebug.point);
-
-                }            //Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
+                    currentNodesInRadius = _navigationCore.FindNodesPositionsInRange(hitDebug.point, DetectionRadius);
+                    _navigationCore.CreatePotentialNodesInRange(hitDebug.point, DetectionRadius);
+                    _navigationCore.CurrentClosestNodePosition = _navigationCore.WorldToGridPosition(hitDebug.point);
+                }         
             }
-
-
         }
 
         private void OnGUI()
@@ -53,7 +55,7 @@ namespace Atomix.Helpers
             {
                 Gizmos.color = Color.yellow;
 
-                Vector3 pos = NavigationCore.Instance.GridToWorldPositionFlattened(currentNodesInRadius[i].x, currentNodesInRadius[i].y);
+                Vector3 pos = _navigationCore.GridToWorldPositionFlattened(currentNodesInRadius[i].x, currentNodesInRadius[i].y);
 
                 RaycastHit hit;
                 if (Physics.Raycast(pos + Vector3.up * 1000, Vector3.down, out hit))
@@ -62,9 +64,7 @@ namespace Atomix.Helpers
                 }
 
                 Gizmos.DrawSphere(pos, .7f);
-
             }
-
         }
     }
 }

@@ -12,10 +12,9 @@ using UnityEngine.UIElements;
 [ExecuteInEditMode]
 public class NavigationCore : MonoBehaviour
 {
-    public static NavigationCore Instance { get; private set; }
-
     [Header("Grid Generation Parameters")]
     public float NodeRadius = 1;
+    public float DetectionThickness = 2f;
     public Vector2Int GridDimension = new Vector2Int(10, 10);
     public bool BakeOnAwake;
 
@@ -30,13 +29,7 @@ public class NavigationCore : MonoBehaviour
     public Vector2Int CurrentClosestNodePosition;
 
     private void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(Instance.gameObject);
-        }
-        Instance = this;
-
+    {       
         CreateGrid();
     }
 
@@ -54,7 +47,6 @@ public class NavigationCore : MonoBehaviour
                 }
             }
         }
-
     }
 
     public Node CreateNodeOnPosition(int x, int y)
@@ -64,7 +56,7 @@ public class NavigationCore : MonoBehaviour
         _grid[x, y] = new Node() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(indexX, indexZ) };
 
         RaycastHit hit;
-        if (Physics.SphereCast(_grid[x, y].WorldPosition + Vector3.up * 1000, 1, Vector3.down, out hit))
+        if (Physics.SphereCast(_grid[x, y].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit))
         {
             _grid[x, y].WorldPosition = new Vector3(_grid[x, y].WorldPosition.x, hit.point.y, _grid[x, y].WorldPosition.z);
 

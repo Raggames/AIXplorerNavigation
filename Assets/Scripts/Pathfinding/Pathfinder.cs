@@ -16,32 +16,39 @@ namespace Atomix.Pathfinding
         public List<Node> closedSetDebug = new List<Node>();
         public List<Node> openSetDebug = new List<Node>();
 
+        private NavigationCore _navigationCore;
+
+        public void Initialize(NavigationCore navigationCore)
+        {
+            _navigationCore = navigationCore;
+
+        }
         public void FindPath(Vector3 startPos, Vector3 targetPos, Action<bool, List<Node>> resultCallback)
         {
             closedSetDebug = new List<Node>();
             openSetDebug = new List<Node>();
 
-            Vector2Int startCellPosition = NavigationCore.Instance.WorldToGridPosition(startPos);
-            Vector2Int targetCellPosition = NavigationCore.Instance.WorldToGridPosition(targetPos);
+            Vector2Int startCellPosition = _navigationCore.WorldToGridPosition(startPos);
+            Vector2Int targetCellPosition = _navigationCore.WorldToGridPosition(targetPos);
 
             Debug.LogError($"FindPath from {startCellPosition} to {targetCellPosition}");
 
-            Node startNode = NavigationCore.Instance.Grid[startCellPosition.x, startCellPosition.y]; //, startCellPosition.z];
-            Node targetNode = NavigationCore.Instance.Grid[targetCellPosition.x, targetCellPosition.y];//, targetCellPosition.z];
+            Node startNode = _navigationCore.Grid[startCellPosition.x, startCellPosition.y]; //, startCellPosition.z];
+            Node targetNode = _navigationCore.Grid[targetCellPosition.x, targetCellPosition.y];//, targetCellPosition.z];
 
             // Si un des nodes est nul on le créée pour obtenir non pas le chemin mais un nuage de points explorés par l'algorithme
             // dont on selectionnera le plus proche de la cible pour s'y rendre avant de scanner la zone alentour et de recommencer l'opération
             if(startNode == null) 
             {
-                startNode = NavigationCore.Instance.CreateNodeOnPosition(startCellPosition.x, startCellPosition.y);
+                startNode = _navigationCore.CreateNodeOnPosition(startCellPosition.x, startCellPosition.y);
             }
 
             if (targetNode == null)
             {
-                targetNode = NavigationCore.Instance.CreateNodeOnPosition(targetCellPosition.x, targetCellPosition.y);
+                targetNode = _navigationCore.CreateNodeOnPosition(targetCellPosition.x, targetCellPosition.y);
             }
 
-            Heap<Node> openSet = new Heap<Node>(NavigationCore.Instance.GridDimension.x  * 2 * NavigationCore.Instance.GridDimension.y * 2);// * grid.GridDimension.z);
+            Heap<Node> openSet = new Heap<Node>(_navigationCore.GridDimension.x  * 2 * _navigationCore.GridDimension.y * 2);// * grid.GridDimension.z);
             HashSet<Node> closedSet = new HashSet<Node>();
             openSet.Add(startNode);
 
@@ -56,7 +63,7 @@ namespace Atomix.Pathfinding
                     resultCallback.Invoke(true, RetracePath(startNode, targetNode));
                 }
 
-                foreach (Node neighbour in NavigationCore.Instance.GetNeighbours(current))
+                foreach (Node neighbour in _navigationCore.GetNeighbours(current))
                 {                    
                     /*if (neighbour.CellType == CellType.Unwalkable 
                         && neighbour != targetNode 
@@ -92,7 +99,7 @@ namespace Atomix.Pathfinding
                 }
             }
             // Selection du node le plus proche de targetNode parmis le nuage de points explorés depuis le startNode (aka closedSet)
-            Node closestFromTarget = NavigationCore.Instance.FindClosestNodeFromList(closedSet.ToList(), targetNode);
+            Node closestFromTarget = _navigationCore.FindClosestNodeFromList(closedSet.ToList(), targetNode);
 
             resultCallback.Invoke(false, RetracePartialPath(startNode, closestFromTarget));
         }
@@ -110,43 +117,13 @@ namespace Atomix.Pathfinding
             List<Node> path = new List<Node>();
             Node currentNode = endNode;
 
-            bool tryReverse = false;
-
             while (currentNode != startNode)
             {
                 path.Add(currentNode);
 
-                /*if (currentNode.Parent == null)
-                {
-                    tryReverse = true;
-                    break;
-                }*/
-
                 currentNode = currentNode.Parent;
             }
 
-            /*if (tryReverse)
-            {
-                Debug.LogError("Try reverse ?");
-
-                currentNode = startNode;
-
-                while (currentNode != endNode)
-                {
-                    path.Add(currentNode);
-
-                    if (currentNode.Parent == null)
-                    {
-                        return null;
-                    }
-
-                    currentNode = currentNode.Parent;
-                }
-
-                path.Add(endNode);
-                return path;
-            }*/
-            
             path.Add(startNode);
             path.Reverse();
 
@@ -175,13 +152,10 @@ namespace Atomix.Pathfinding
             return path;
         }
 
-
         float GetHeuristic(Node nodeA, Node nodeB)
         {
             //return Mathf.Max(0, Mathf.Abs(nodeB.Position.x - nodeA.Position.x) + Mathf.Abs(nodeB.Position.z - nodeA.Position.z));
-            //return Mathf.Max(0, Mathf.Abs(nodeB.Position.x - nodeA.Position.x) + Mathf.Abs(nodeB.Position.y - nodeA.Position.y) + Mathf.Abs(nodeB.Position.z - nodeA.Position.z));
             return NavigationCore.GetManhattanDistance(nodeA.Position, nodeB.Position);
-
             //return GetDistance(nodeA, nodeB);
         }
 

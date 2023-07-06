@@ -13,12 +13,16 @@ namespace Atomix.Core
     [RequireComponent(typeof(CharacterController))]
     public class NavigationAgentComponent : MonoBehaviour
     {
+        public NavigationCore NavigationCore;
+
         [Header("Parameters")]
         // Maximum distance from a waypoint to be considered as achieved
         public float WaypointThreshold = .4f;
         public float SteeringDistance = .4f;
         public float MaximumSpeed = 3f;
         public int DetectionRadius = 10;
+        public int DetectionAreaBonus = 1;
+        public int TotalSearchIterations = 50;
 
         private Pathfinder _pathfinder;
         private Action<bool> _onArrivedEndPath;
@@ -27,11 +31,21 @@ namespace Atomix.Core
         private bool _isNavigating = false;
 
         public Transform DebugDestination;
+        public int Debug_SearchAreaMultiplier;
 
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();
             _pathfinder = GetComponent<Pathfinder>();
+
+            // For debug, this component should be initialized externally 
+            Initialize(NavigationCore);
+        }
+
+        public void Initialize(NavigationCore navigationCore)
+        {
+            NavigationCore = navigationCore;
+            _pathfinder.Initialize(navigationCore);
         }
 
         private void Update()
@@ -43,19 +57,21 @@ namespace Atomix.Core
             }
         }
 
-        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, int searchAreaMultiplier = 0, int totalMovesCount = 0)
+        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, int searchAreaMultiplier = 0, int searchIterations = 0)
         {
-            if (totalMovesCount == 0)
+            Debug_SearchAreaMultiplier = searchAreaMultiplier;
+
+            if (searchIterations == 0)
                 _onArrivedEndPath = arrivedAtDestination;
 
-            if (searchAreaMultiplier > 25 || totalMovesCount > 35)
+            if (searchIterations > TotalSearchIterations)
             {
                 Debug.LogError("Too much moves for this navigation, abort to avoid stack overflow");
                 arrivedAtDestination.Invoke(false);
                 return;
             }
 
-            totalMovesCount++;
+            searchIterations++;
 
             _pathfinder.FindPath(transform.position, destination, (found_complete_path, path) =>
             {
@@ -75,14 +91,12 @@ namespace Atomix.Core
                         }
                         else
                         {
-                            Debug.LogError("found_partial_path.");
+                            Debug.LogError($"found_partial_path. lenght = {path.Count}");
 
                             // PARTIAL PATH :
                             // Go at destination, then compute grid in detection radius and redo until arrived at destination
                             StartCoroutine(NavigationRoutine(path.Select(t => t.WorldPosition).ToList(), (result) =>
                             {
-                                Debug.LogError("Arrived at end of partial path. Analyse navmesh and retry.");
-
                                 float _currentDistance = (transform.position - destination).magnitude;
                                 if (_currentDistance <= WaypointThreshold)
                                 {
@@ -90,11 +104,14 @@ namespace Atomix.Core
                                 }
                                 else
                                 {
-                                    NavigationCore.Instance.CreatePotentialNodesInRange(transform.position, DetectionRadius + (DetectionRadius / 2) * searchAreaMultiplier);
-                                    searchAreaMultiplier--;
-                                    NavigateTo(destination, arrivedAtDestination, searchAreaMultiplier, totalMovesCount);
-                                }
-                                
+                                    Debug.LogError("Arrived at end of partial path. Analyse navmesh and retry.");
+
+                                    NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * searchAreaMultiplier);
+
+                                    searchAreaMultiplier++;
+
+                                    NavigateTo(destination, arrivedAtDestination, searchAreaMultiplier, searchIterations);
+                                }                              
 
                             }));
                         }
@@ -110,9 +127,9 @@ namespace Atomix.Core
                         {
                             // Probly no path found to destination. Search around 
                             Debug.LogError("Path count was 0. Try search bigger area and retry.");
-                            NavigationCore.Instance.CreatePotentialNodesInRange(transform.position, DetectionRadius + (DetectionRadius / 2) * searchAreaMultiplier);
+                            NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * searchAreaMultiplier);
                             searchAreaMultiplier++;
-                            NavigateTo(destination, arrivedAtDestination, searchAreaMultiplier, totalMovesCount);
+                            NavigateTo(destination, arrivedAtDestination, searchAreaMultiplier, searchIterations);
                         }
                        
                     }
