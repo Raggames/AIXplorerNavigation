@@ -2,6 +2,8 @@
 
 ![Screenshot](https://github.com/Raggames/AIXplorerNavigation/blob/main/Videos/AIXplorer.png)
 
+<b> PRESENTATION </b>
+
 With procedurally generated terrains, NavMesh baking can be a big performance issue. 
 I encountered this situation while working on my my multiplayer DungeonCrawler/Exploration project.
 
@@ -23,3 +25,7 @@ This is not a perfect solution that has two major drawbacks :
 Nevertheless, the logic of this navigation can probably be improved by tiling the terrain in smaller areas (the agent could transit from one area to another), so the number of points can be small enough.
 The baking of the 'Navigation Mesh' could also be done without using any raycasting if the procedural algorithm used can provide the positions of objects on the terrain. 
 
+<b> TEST </b>
+
+In the Sample Scene, click on 'N' to make the agent start navigate to its destination. 
+Hold CRTL + Moving mouse allows you to bake the terrain like a brush.
