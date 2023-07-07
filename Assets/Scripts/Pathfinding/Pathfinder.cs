@@ -14,7 +14,6 @@ namespace Atomix.Pathfinding
         public List<Node> Path;
 
         public List<Node> closedSetDebug = new List<Node>();
-        public List<Node> openSetDebug = new List<Node>();
 
         private NavigationCore _navigationCore;
 
@@ -26,12 +25,9 @@ namespace Atomix.Pathfinding
         public void FindPath(Vector3 startPos, Vector3 targetPos, Action<bool, List<Node>> resultCallback)
         {
             closedSetDebug = new List<Node>();
-            openSetDebug = new List<Node>();
 
             Vector2Int startCellPosition = _navigationCore.WorldToGridPosition(startPos);
             Vector2Int targetCellPosition = _navigationCore.WorldToGridPosition(targetPos);
-
-            Debug.LogError($"FindPath from {startCellPosition} to {targetCellPosition}");
 
             Node startNode = _navigationCore.Grid[startCellPosition.x, startCellPosition.y]; //, startCellPosition.z];
             Node targetNode = _navigationCore.Grid[targetCellPosition.x, targetCellPosition.y];//, targetCellPosition.z];
@@ -64,17 +60,9 @@ namespace Atomix.Pathfinding
                 }
 
                 foreach (Node neighbour in _navigationCore.GetNeighbours(current))
-                {                    
-                    /*if (neighbour.CellType == CellType.Unwalkable 
-                        && neighbour != targetNode 
-                        && neighbour != startNode)
-                    {
-                        continue;
-                    }*/
-
+                {                  
                     if(neighbour == null)
                     {
-                        Debug.LogError("Neighbour was null");
                         continue;
                     }
 
