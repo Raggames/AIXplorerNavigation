@@ -1,6 +1,6 @@
 # AIXplorerNavigation
 
-![Screenshot](https://github.com/Raggames/AIXplorerNavigation/blob/main/Videos/AIXplorer.png)
+[![Watch the video](https://github.com/Raggames/AIXplorerNavigation/blob/main/Videos/AIXplorer.png)]([https://youtu.be/vt5fpE0bzSY](https://www.youtube.com/watch?v=OuUDYfzAtek))
 
 <b> PRESENTATION </b>
 
