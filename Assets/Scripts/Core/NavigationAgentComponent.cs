@@ -25,6 +25,7 @@ namespace Atomix.Core
         public int DetectionRadius = 10;
         public int DetectionAreaBonus = 1;
         public int TotalSearchIterations = 50;
+        public float AvoidanceRadius = 4;
         public float AvoidanceForce = 1;
         public float TurnSmoothTime = 0.3f;
         public float SearchAreaMultiplier;
@@ -39,16 +40,17 @@ namespace Atomix.Core
         public float DistanceToDestination;
 
         // PRIVATES
+        private Pathfinder _pathfinder;
         private bool _isNavigating = false;
         private Vector3 _turnDampingVelocity = Vector3.zero;
-        private Pathfinder _pathfinder;
+        private Vector3 _lastCheckPosition;
         private Action<bool> _onArrivedEndPath;
         private CharacterController _characterController;
         private List<Node> _currentPath = new List<Node>();
         private Vector3 _currentDestination;
         private Vector2Int _currentPosition;
-        private Vector3 _lastCheckPosition;
         private float _stuckTimer;
+        private float _lastCurrentDistance = 0;
 
         private void Awake()
         {
@@ -69,9 +71,10 @@ namespace Atomix.Core
         {
             if (Input.GetKeyDown(KeyCode.N))
             {
-                StopNavigation();
-                Debug.LogError("DEST=" + DebugDestination.position);
-                NavigateTo(DebugDestination.position, (result) => Debug.Log(result), 0, 0);
+                if (_isNavigating)
+                    StopNavigation();
+
+                ExecuteNavigation(DebugDestination.position, (result) => Debug.Log(result));
             }
 
             if (_isNavigating)
@@ -81,30 +84,17 @@ namespace Atomix.Core
             }
 
             _characterController.Move(Vector3.down * 10 * Time.deltaTime);
-
-            /* Vector2Int pos = NavigationCore.WorldToGridPosition(transform.position);
-
-             if(pos != _currentPosition)
-             {
-                 NavigationCore.UpdateNodeStateOnWorldPosition(_currentPosition, NodeState.Walkable);
-                 NavigationCore.UpdateNodeStateOnWorldPosition(pos, NodeState.Unwalkable);
-             }
-
-             _currentPosition = pos;*/
         }
 
-
-        /*private void NavigationCoreEventHandler_OnNodeStateUpdate(NavigationCore arg1, Node arg2)
+        public void ExecuteNavigation(Vector3 destination, Action<bool> arrivedAtDestination)
         {
-            if (_isNavigating && arg1 == NavigationCore && _currentPath.Contains(arg2))
-            {
-                StopNavigation();
-                NavigateTo(_currentDestination, null);
-            }
-        }*/
+            _stuckTimer = 0;
+            _lastCurrentDistance = 0;
 
+            NavigateTo(DebugDestination.position, (result) => Debug.Log(result), 0, 0);
+        }
 
-        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, float searchAreaMultiplier = 0, int totalIterations = 0, int noPathFoundIterations = 0)
+        private void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, float searchAreaMultiplier = 0, int totalIterations = 0, int noPathFoundIterations = 0)
         {
             SearchAreaMultiplier = searchAreaMultiplier;
             _currentDestination = destination;
@@ -125,6 +115,8 @@ namespace Atomix.Core
             {
                 if (path != null)
                 {
+                    _currentPath = path;
+
                     if (path.Count > 0)
                     {
                         noPathFoundIterations = 0;
@@ -158,7 +150,7 @@ namespace Atomix.Core
                         }
                     }
                     else
-                    {                        
+                    {
                         float _currentDistance = (transform.position - destination).magnitude;
                         if (_currentDistance <= WaypointThreshold)
                         {
@@ -195,8 +187,6 @@ namespace Atomix.Core
             });
         }
 
-        private float _lastCurrentDistance = 0;
-
         private void OnEndPartialPath(Vector3 destination, Action<bool> arrivedAtDestination, int searchIterations, int noPathFoundIterations)
         {
             float _currentDistance = (transform.position - destination).magnitude;
@@ -208,9 +198,9 @@ namespace Atomix.Core
             {
                 // If a previous move didn't change the distance from destination to a small value, that has a high probability of the agent being stuck.
                 // To avoid recomputing an impossible path until stack overflowing or the hard "Total iteration" cap, the navigation will interrupt in that specific case.
-                if(Mathf.Abs(_lastCurrentDistance - _currentDistance) < .05f)
+                if (Mathf.Abs(_lastCurrentDistance - _currentDistance) < .05f)
                 {
-                    Debug.LogError("Abort navigation, stuck on path.");
+                    Debug.LogError("Abort navigation, stuck on path." + Mathf.Abs(_lastCurrentDistance - _currentDistance));
                     arrivedAtDestination.Invoke(false);
                 }
                 else
@@ -224,7 +214,7 @@ namespace Atomix.Core
                     SearchAreaMultiplier++;
 
                     NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, searchIterations, noPathFoundIterations);
-                }              
+                }
             }
         }
 
@@ -245,7 +235,7 @@ namespace Atomix.Core
                 //Vector3 toNextWp = (transform.position - path[_pathIndex]);
                 while (true)
                 {
-                    
+
                     DistanceToNextWp = (transform.position - path[_pathIndex]).magnitude;
 
                     // Getting a steering position that looks at a given distance from the agent along the path
@@ -284,7 +274,7 @@ namespace Atomix.Core
                     _direction.Normalize();
 
                     // Checking if overlapping whith other agents in a given range
-                    var cols = Physics.OverlapSphere(transform.position, 5, LayerMask.GetMask("Agents"));
+                    var cols = Physics.OverlapSphere(transform.position, AvoidanceRadius, LayerMask.GetMask("Agents"));
 
                     // If too close from an agent, avoidance
                     if (cols.Length > 0)
@@ -400,5 +390,20 @@ namespace Atomix.Core
 
             return false;
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if(_currentPath != null)
+            {
+                Gizmos.color = Color.blue;
+                foreach (var v in _currentPath)
+                {
+                    Gizmos.DrawCube(v.WorldPosition, Vector3.one);
+                }
+            }
+            
+        }
+#endif
     }
 }
