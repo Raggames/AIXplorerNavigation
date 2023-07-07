@@ -63,7 +63,7 @@ public class NavigationCore : MonoBehaviour
         _grid[x, y] = new Node() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(indexX, indexZ) };
 
         RaycastHit hit;
-        if (Physics.SphereCast(_grid[x, y].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit))
+        if (Physics.SphereCast(_grid[x, y].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit, Mathf.Infinity, LayerMask.GetMask("Default", "Obstacle")))
         {
             _grid[x, y].WorldPosition = new Vector3(_grid[x, y].WorldPosition.x, hit.point.y, _grid[x, y].WorldPosition.z);
 
