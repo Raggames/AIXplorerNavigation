@@ -18,7 +18,8 @@ namespace Atomix.Core
 
         [Header("Parameters")]
         // Maximum distance from a waypoint to be considered as achieved
-        public float WaypointThreshold = .4f;
+        public float WaypointThreshold = 4.5f;
+        public float DestinationThreshold = 2f;
         public float SteeringDistance = .4f;
         public float MaximumSpeed = 3f;
         public int DetectionRadius = 10;
@@ -29,6 +30,7 @@ namespace Atomix.Core
         public float SearchAreaMultiplier;
         public float SearchAreaDecay = 5;
         public float MaximumStuckTime = .75f;
+        public float ApproachTimer = .25f;
 
         [Header("Debug")]
         public Transform DebugDestination;
@@ -102,22 +104,22 @@ namespace Atomix.Core
         }*/
 
 
-        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, float searchAreaMultiplier = 0, int searchIterations = 0)
+        public void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, float searchAreaMultiplier = 0, int totalIterations = 0, int noPathFoundIterations = 0)
         {
             SearchAreaMultiplier = searchAreaMultiplier;
             _currentDestination = destination;
 
-            if (searchIterations == 0)
+            if (totalIterations == 0)
                 _onArrivedEndPath = arrivedAtDestination;
 
-            if (searchIterations > TotalSearchIterations)
+            if (totalIterations > TotalSearchIterations)
             {
                 Debug.LogError("Too much moves for this navigation, abort to avoid stack overflow");
                 arrivedAtDestination.Invoke(false);
                 return;
             }
 
-            searchIterations++;
+            totalIterations++;
 
             _pathfinder.FindPath(transform.position, destination, (found_complete_path, path) =>
             {
@@ -125,6 +127,8 @@ namespace Atomix.Core
                 {
                     if (path.Count > 0)
                     {
+                        noPathFoundIterations = 0;
+
                         List<Vector3> _pathList = path.Select(t => t.WorldPosition).ToList();
 
                         if ((_pathList[_pathList.Count - 1] - destination).magnitude <= WaypointThreshold)
@@ -139,7 +143,7 @@ namespace Atomix.Core
                             // GOTO
                             searchAreaMultiplier = 0;
 
-                            StartCoroutine(NavigationRoutine(_pathList, (resut) => Debug.LogError("END " + resut)));
+                            StartCoroutine(NavigationRoutine(_pathList, (result) => _onArrivedEndPath.Invoke(result)));
                         }
                         else
                         {
@@ -149,12 +153,12 @@ namespace Atomix.Core
                             // Go at destination, then compute grid in detection radius and redo until arrived at destination
                             StartCoroutine(NavigationRoutine(_pathList, (result) =>
                             {
-                                OnEndPartialPath(destination, arrivedAtDestination, searchIterations);
+                                OnEndPartialPath(destination, arrivedAtDestination, totalIterations, noPathFoundIterations);
                             }));
                         }
                     }
                     else
-                    {
+                    {                        
                         float _currentDistance = (transform.position - destination).magnitude;
                         if (_currentDistance <= WaypointThreshold)
                         {
@@ -163,13 +167,20 @@ namespace Atomix.Core
                         }
                         else
                         {
+                            if (noPathFoundIterations >= 3)
+                            {
+                                Debug.LogError("Too much wrong try iterations.");
+                                arrivedAtDestination.Invoke(false);
+                                return;
+                            }
+
                             // Probly no path found to destination. Search around 
-                            Debug.LogError("Path count was 0. Try search bigger area and retry." + searchIterations + " " + _currentDistance);
+                            Debug.LogError("Path count was 0. Try search bigger area and retry." + totalIterations + " " + _currentDistance);
 
                             NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
                             SearchAreaMultiplier++;
-
-                            NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, searchIterations);
+                            noPathFoundIterations++;
+                            NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, totalIterations, noPathFoundIterations);
                         }
 
                     }
@@ -184,7 +195,9 @@ namespace Atomix.Core
             });
         }
 
-        private void OnEndPartialPath(Vector3 destination, Action<bool> arrivedAtDestination, int searchIterations)
+        private float _lastCurrentDistance = 0;
+
+        private void OnEndPartialPath(Vector3 destination, Action<bool> arrivedAtDestination, int searchIterations, int noPathFoundIterations)
         {
             float _currentDistance = (transform.position - destination).magnitude;
             if (_currentDistance <= WaypointThreshold)
@@ -193,19 +206,33 @@ namespace Atomix.Core
             }
             else
             {
-                Debug.LogError("Arrived at end of partial path. Analyse navmesh and retry." + searchIterations + " " + _currentDistance);
+                // If a previous move didn't change the distance from destination to a small value, that has a high probability of the agent being stuck.
+                // To avoid recomputing an impossible path until stack overflowing or the hard "Total iteration" cap, the navigation will interrupt in that specific case.
+                if(Mathf.Abs(_lastCurrentDistance - _currentDistance) < .05f)
+                {
+                    Debug.LogError("Abort navigation, stuck on path.");
+                    arrivedAtDestination.Invoke(false);
+                }
+                else
+                {
+                    _lastCurrentDistance = _currentDistance;
 
-                NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
+                    Debug.LogError("Arrived at end of partial path. Analyse navmesh and retry." + searchIterations + " " + _currentDistance);
 
-                SearchAreaMultiplier++;
+                    NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
 
-                NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, searchIterations);
+                    SearchAreaMultiplier++;
+
+                    NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, searchIterations, noPathFoundIterations);
+                }              
             }
         }
 
         private IEnumerator NavigationRoutine(List<Vector3> path, Action<bool> arrivedAtDestination)
         {
             _isNavigating = true;
+
+            float _destinationApproachTimer = 0;
 
             int _pathIndex = 0;
             Vector3 _destination = path[path.Count - 1];
@@ -218,19 +245,7 @@ namespace Atomix.Core
                 //Vector3 toNextWp = (transform.position - path[_pathIndex]);
                 while (true)
                 {
-                    // If above a certain threshold, allows the agent to pass waypoints at a certain range
-                    if ((transform.position - _currentDestination).magnitude > WaypointThreshold)
-                    {
-                        if ((transform.position - path[_pathIndex]).magnitude <= WaypointThreshold)
-                            break;
-                    }
-                    // When approaching final destination, the range is shorter.
-                    else
-                    {
-                        if ((transform.position - path[_pathIndex]).magnitude <= 1)
-                            break;
-                    }
-
+                    
                     DistanceToNextWp = (transform.position - path[_pathIndex]).magnitude;
 
                     // Getting a steering position that looks at a given distance from the agent along the path
@@ -301,19 +316,11 @@ namespace Atomix.Core
                     // Smooth daming the direction to smooth the movement a bit more.
                     _direction = Vector3.SmoothDamp(_oldDir, _direction, ref _turnDampingVelocity, TurnSmoothTime);
 
-                    Vector2 _testHorizontalVelocity = new Vector2(_direction.x, _direction.z);
-                    if (_testHorizontalVelocity.magnitude <= .05f)
-                    {
-                        Debug.LogError("Overshooted waypoint ?");
-
-                        StopNavigation();
-                        arrivedAtDestination.Invoke(false);
-                        yield break;
-                    }
-
                     // Applying movement to contorller
-                    _characterController.Move(_direction * MaximumSpeed * Time.deltaTime);
-                    LookAt(_steerPosition);
+                    _characterController.Move(_direction * (MaximumSpeed / (1 + _destinationApproachTimer * 100)) * Time.deltaTime);
+
+                    if (_destinationApproachTimer == 0)
+                        LookAt(_steerPosition);
 
                     // Decaying the search area multiplier that increases when an agent search for a path 
                     if (SearchAreaMultiplier > 0)
@@ -328,14 +335,35 @@ namespace Atomix.Core
                     }
 
                     yield return null;
+
+                    // If above a certain threshold, allows the agent to pass waypoints at a certain range
+                    if ((transform.position - _currentDestination).magnitude > WaypointThreshold)
+                    {
+                        if ((transform.position - path[_pathIndex]).magnitude <= WaypointThreshold)
+                            break;
+                    }
+                    // When approaching final destination, the range is shorter.
+                    else
+                    {
+                        // When in range from destination waypoint, the agent will enter in approach mode for a fixes duration
+                        // During this time, its speed will decrease and he wont fiw his look at steering point anymore (avoid turning on self problem / overshooting)
+                        if (_destinationApproachTimer > 0 || (transform.position - path[_pathIndex]).magnitude <= DestinationThreshold)
+                        {
+                            _destinationApproachTimer += Time.deltaTime;
+
+                            if (_destinationApproachTimer > ApproachTimer)
+                                break;
+                        }
+                    }
+
                 }
                 _pathIndex++;
             }
 
-            Debug.LogError("EOP" + path[_pathIndex - 1]);
-            //transform.position = path[_pathIndex - 1];
-
             _isNavigating = false;
+
+            yield return null;
+
             arrivedAtDestination.Invoke(true);
         }
 
@@ -355,7 +383,7 @@ namespace Atomix.Core
 
         private bool IsStuck()
         {
-            if((_lastCheckPosition - transform.position).magnitude > .5f)
+            if ((_lastCheckPosition - transform.position).magnitude > .5f)
             {
                 _lastCheckPosition = transform.position;
                 _stuckTimer = 0;
@@ -364,7 +392,7 @@ namespace Atomix.Core
             {
                 _stuckTimer += Time.deltaTime;
 
-                if(_stuckTimer > MaximumStuckTime)
+                if (_stuckTimer > MaximumStuckTime)
                 {
                     return true;
                 }
