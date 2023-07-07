@@ -1,6 +1,6 @@
 # AIXplorerNavigation
 
-[![Watch the video](https://github.com/Raggames/AIXplorerNavigation/blob/main/Videos/AIXplorer.png)]([https://youtu.be/vt5fpE0bzSY](https://www.youtube.com/watch?v=OuUDYfzAtek))
+https://github.com/Raggames/AIXplorerNavigation/assets/51744359/4780e9fb-ea2f-47ac-9785-03cabf4baad5
 
 <b> PRESENTATION </b>
 
