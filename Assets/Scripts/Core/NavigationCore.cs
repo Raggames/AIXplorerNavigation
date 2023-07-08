@@ -8,12 +8,13 @@ using UnityEngine;
 using static UnityEditor.Experimental.GraphView.GraphView;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
+using UnityEditor.Experimental.GraphView;
 
 
 public static class NavigationCoreEventHandler
 {
-    public static event Action<NavigationCore, Node> OnNodeStateUpdate;
-    public static void NodeStateUpdateRequest(NavigationCore navigationCore, Node node) => OnNodeStateUpdate?.Invoke(navigationCore, node);    
+    public static event Action<NavigationCore, Atomix.Pathfinding.GridNode> OnNodeStateUpdate;
+    public static void NodeStateUpdateRequest(NavigationCore navigationCore, Atomix.Pathfinding.GridNode node) => OnNodeStateUpdate?.Invoke(navigationCore, node);
 }
 
 [ExecuteInEditMode]
@@ -28,21 +29,24 @@ public class NavigationCore : MonoBehaviour
     [Header("Grid Detection Parameters")]
     public LayerMask WalkableLayers;
 
-    private ConcurrentBag<Node> _navigationGrid = new ConcurrentBag<Node>();
-    private Node[,] _grid;
-
-    public Node[,] Grid => _grid;
-
     public Vector2Int CurrentClosestNodePosition;
+    public int GridDictionnaryLenght;
+
+    public Dictionary<Vector2Int, GridNode> GridDictionnary { get; set; } = new Dictionary<Vector2Int, GridNode>();
 
     private void Awake()
-    {       
+    {
         CreateGrid();
+    }
+
+    private void Update()
+    {
+        GridDictionnaryLenght = GridDictionnary.Count;
     }
 
     public void CreateGrid()
     {
-        _grid = new Node[2 * GridDimension.x, 2 * GridDimension.y];
+        GridDictionnary = new Dictionary<Vector2Int, GridNode>();
 
         if (BakeOnAwake)
         {
@@ -56,30 +60,46 @@ public class NavigationCore : MonoBehaviour
         }
     }
 
-    public Node CreateNodeOnPosition(int x, int y)
+    public GridNode GetNodeByPosition(Vector2Int gridPosition, bool createIfNull = false)
+    {
+        Atomix.Pathfinding.GridNode node = null;
+        if (GridDictionnary.TryGetValue(gridPosition, out node))
+            return node;
+
+        if (createIfNull)
+            node = CreateNodeOnPosition(gridPosition.x, gridPosition.y);
+        else return null;
+
+        return node;
+    }
+
+    public GridNode CreateNodeOnPosition(int x, int y)
     {
         int indexX = x - GridDimension.x;
         int indexZ = y - GridDimension.y;
-        _grid[x, y] = new Node() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(indexX, indexZ) };
+        var position = new Vector2Int(x, y);
+
+        GridDictionnary.Add(position, new GridNode() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(indexX, indexZ) });
+        //_grid[x, y] = GridDictionnary[new Vector2Int(x, y)];
 
         RaycastHit hit;
-        if (Physics.SphereCast(_grid[x, y].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit, Mathf.Infinity, LayerMask.GetMask("Default", "Obstacle")))
+        if (Physics.SphereCast(GridDictionnary[position].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit, Mathf.Infinity, LayerMask.GetMask("Default", "Obstacle")))
         {
-            _grid[x, y].WorldPosition = new Vector3(_grid[x, y].WorldPosition.x, hit.point.y, _grid[x, y].WorldPosition.z);
+            GridDictionnary[position].WorldPosition = new Vector3(GridDictionnary[position].WorldPosition.x, hit.point.y, GridDictionnary[position].WorldPosition.z);
 
             if ((WalkableLayers & (1 << hit.collider.gameObject.layer)) != 0)
             {
                 // yup
-                _grid[x, y].NodeState = NodeState.Walkable;
+                GridDictionnary[position].NodeState = NodeState.Walkable;
             }
             else
             {
                 // nope
-                _grid[x, y].NodeState = NodeState.Unwalkable;
+                GridDictionnary[position].NodeState = NodeState.Unwalkable;
             }
         }
 
-        return _grid[x, y];
+        return GridDictionnary[position];
     }
 
     public void UpdateNodeStateOnWorldPosition(Vector3 position, NodeState nodeState)
@@ -89,11 +109,11 @@ public class NavigationCore : MonoBehaviour
 
     public void UpdateNodeStateOnWorldPosition(Vector2Int coordinates, NodeState nodeState)
     {
-        _grid[coordinates.x, coordinates.y].NodeState = nodeState;
-        NavigationCoreEventHandler.NodeStateUpdateRequest(this, _grid[coordinates.x, coordinates.y]);
+        GridDictionnary[coordinates].NodeState = nodeState;
+        NavigationCoreEventHandler.NodeStateUpdateRequest(this, GridDictionnary[coordinates]);
     }
 
-    public List<Node> FindNodesInRange(Vector3 position, float range = 5)
+    /*public List<Node> FindNodesInRange(Vector3 position, float range = 5)
     {
         List<Node> nodes = new List<Node>();
 
@@ -104,7 +124,7 @@ public class NavigationCore : MonoBehaviour
                 nodes.Add(cell);
         }
         return nodes;
-    }
+    }*/
 
     public List<Vector2Int> FindNodesPositionsInRange(Vector3 position, float range = 5, bool toGround = false)
     {
@@ -112,18 +132,17 @@ public class NavigationCore : MonoBehaviour
         position.y = 0;
         float rangeSquared = range * range;
 
-        for (int x = 0; x < 2 * GridDimension.x; ++x)
-        {
-            for (int y = 0; y < 2 * GridDimension.y; ++y)
-            {
-                int indexX = x - GridDimension.x;
-                int indexZ = y - GridDimension.y;
+        Vector2Int gridPosition = WorldToGridPosition(position);
 
-                Vector3 gridWorldPosition = GridToWorldPositionFlattened(indexX, indexZ);
+        for (int x = -gridPosition.x; x < gridPosition.x; ++x)
+        {
+            for (int y = -gridPosition.y; y < -gridPosition.y; ++y)
+            {
+                Vector3 gridWorldPosition = GridToWorldPositionFlattened(gridPosition.x + x, gridPosition.y + y);
 
                 if ((gridWorldPosition - position).sqrMagnitude <= rangeSquared)
                 {
-                    nodes.Add(new Vector2Int(indexX, indexZ));
+                    nodes.Add(new Vector2Int(gridPosition.x + x, gridPosition.y + y));
                 }
             }
         }
@@ -140,7 +159,8 @@ public class NavigationCore : MonoBehaviour
         {
             for (int y = 0; y < 2 * GridDimension.y; ++y)
             {
-                if (_grid[x, y] == null)
+                if (!GridDictionnary.ContainsKey(new Vector2Int(x, y)))
+                //if (_grid[x, y] == null)
                 {
                     int indexX = x - GridDimension.x;
                     int indexZ = y - GridDimension.y;
@@ -155,10 +175,10 @@ public class NavigationCore : MonoBehaviour
         }
     }
 
-    public Node FindClosestNodeFromList(List<Node> input, Node target)
+    public GridNode FindClosestNodeFromList(List<GridNode> input, GridNode target)
     {
         float min = float.MaxValue;
-        Node closest = null;
+        Atomix.Pathfinding.GridNode closest = null;
         foreach (var cell in input)
         {
             float sqr = (cell.Position - target.Position).sqrMagnitude;
@@ -224,14 +244,6 @@ public class NavigationCore : MonoBehaviour
         //&& percentZ - margin >= 00 && percentY + margin <= 1;
     }
 
-    public Node GetNode(int x, int y)
-    {
-        int indexX = x + GridDimension.x;
-        int indexZ = y + GridDimension.y;
-
-        return _grid[indexX, indexZ];//, position.z];
-    }
-
     public Vector3Int GetDirection(Vector3Int posA, Vector3Int posB)
     {
         Vector3Int directionnal = posB - posA;
@@ -293,9 +305,9 @@ public class NavigationCore : MonoBehaviour
         return Mathf.FloorToInt(Vector3Int.Distance(from, to));
     }
 
-    public List<Node> GetNeighbours(Node from)
+    public List<GridNode> GetNeighbours(GridNode from)
     {
-        List<Node> neighbours = new List<Node>();
+        List<GridNode> neighbours = new List<GridNode>();
         Vector3Int[] positions = new Vector3Int[8];
 
         positions[0] = from.Position + new Vector3Int(-1, 0, 0);
@@ -310,14 +322,17 @@ public class NavigationCore : MonoBehaviour
         return neighbours;
     }
 
-    private void AddNeighbours(List<Node> neighbours, Vector3Int[] positions)
+    private void AddNeighbours(List<Atomix.Pathfinding.GridNode> neighbours, Vector3Int[] positions)
     {
         for (int i = 0; i < positions.Length; ++i)
         {
-            if (IsInGrid(positions[i])
-                && _grid[positions[i].x, positions[i].z] != null)
+            if (IsInGrid(positions[i]))
             {
-                neighbours.Add(_grid[positions[i].x, positions[i].z]);
+                GridNode node = null;
+                if (GridDictionnary.TryGetValue(new Vector2Int(positions[i].x, positions[i].z), out node))
+                {
+                    neighbours.Add(node);
+                }
             }
         }
     }
@@ -345,63 +360,40 @@ public class NavigationCore : MonoBehaviour
     {
         if (DoDebugDraw)
         {
-            if (_navigationGrid != null)
-            {
-                foreach (var cell in _navigationGrid)
-                {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawSphere(cell.Position, .35f);
-                }
-            }
-
-            if (_grid == null)
-                CreateGrid();
-
-            if (_grid != null)
+            if (GridDictionnary != null)
             {
                 Gizmos.color = Color.yellow;
                 //Gizmos.DrawWireCube(transform.position, GridDimension * CellDimension));
-                for (int x = -GridDimension.x; x < GridDimension.x; ++x)
+
+
+                foreach(var n in GridDictionnary)
                 {
-                    for (int y = -GridDimension.y; y < GridDimension.y; ++y)
+                    if (n.Value != null)
                     {
-                        if (x + GridDimension.x == CurrentClosestNodePosition.x && y + GridDimension.y == CurrentClosestNodePosition.y)
+                        if (n.Value.NodeState == NodeState.Walkable)
                         {
-                            Gizmos.color = Color.green;
-                        }
-                        else
-                        {
-                            Node n = GetNode(x, y);
-
-                            if (n != null)
+                            if (DrawWalkable)
                             {
-                                if (n.NodeState == NodeState.Walkable)
-                                {
-                                    if (DrawWalkable)
-                                    {
-                                        Gizmos.color = Color.green;
-                                        Gizmos.DrawSphere(n.WorldPosition, .5f);
-                                    }
-                                }
-                                else if (DrawUnwalkable)
-                                {
-                                    Gizmos.color = Color.black;
-                                    Gizmos.DrawSphere(n.WorldPosition, .5f);
-                                }
-                            }
-                            else
-                            {
-                                if (DrawGrid)
-                                {
-                                    Gizmos.color = Color.red;
-                                    Gizmos.DrawSphere(GridToWorldPositionFlattened(x, y), .5f);
-                                }
+                                Gizmos.color = Color.green;
+                                Gizmos.DrawSphere(n.Value.WorldPosition, .5f);
                             }
                         }
-
-                        //Gizmos.DrawWireCube(GridToWorldPosition(GridArray[x, y, z].Position), Vector3.one * CellDimension);
+                        else if (DrawUnwalkable)
+                        {
+                            Gizmos.color = Color.black;
+                            Gizmos.DrawSphere(n.Value.WorldPosition, .5f);
+                        }
                     }
-                }
+                   /* else
+                    {
+                        if (DrawGrid)
+                        {
+                            Gizmos.color = Color.red;
+                            Gizmos.DrawSphere(GridToWorldPositionFlattened(x, y), .5f);
+                        }
+                    }*/
+                }               
+                
             }
         }
 

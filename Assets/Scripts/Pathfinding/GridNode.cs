@@ -8,7 +8,7 @@ namespace Atomix.Pathfinding
         Unwalkable,
     }
 
-    public class Node : IHeapItem<Node>
+    public class GridNode : IHeapItem<GridNode>
     {
         public Vector3Int Position;
         public Vector3 WorldPosition;
@@ -26,7 +26,7 @@ namespace Atomix.Pathfinding
             }
         }
 
-        public Node Parent;
+        public GridNode Parent;
 
         public float fCost
         {
@@ -52,7 +52,7 @@ namespace Atomix.Pathfinding
             }
         }
 
-        public int CompareTo(Node nodeToCompare)
+        public int CompareTo(GridNode nodeToCompare)
         {
             int compare = fCost.CompareTo(nodeToCompare.fCost);
             if (compare == 0)
