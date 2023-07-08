@@ -19,15 +19,15 @@ namespace Atomix.Core
         [Header("Parameters")]
         // Maximum distance from a waypoint to be considered as achieved
         public float WaypointThreshold = 4.5f;
-        public float DestinationThreshold = 2f;
-        public float SteeringDistance = .4f;
+        public float DestinationThreshold = 2.5f;
+        public float SteeringDistance = 6f;
         public float MaximumSpeed = 3f;
-        public int DetectionRadius = 10;
-        public int DetectionAreaBonus = 1;
+        public int DetectionRadius = 12;
+        public int DetectionAreaBonus = 8;
         public int TotalSearchIterations = 50;
-        public float AvoidanceRadius = 4;
+        public float AvoidanceRadius = 2;
         public float AvoidanceForce = 1;
-        public float TurnSmoothTime = 0.3f;
+        public float TurnSmoothTime = 0.05f;
         public float SearchAreaMultiplier;
         public float SearchAreaDecay = 5;
         public float MaximumStuckTime = .75f;
@@ -51,6 +51,7 @@ namespace Atomix.Core
         private Vector2Int _currentPosition;
         private float _stuckTimer;
         private float _lastCurrentDistance = 0;
+        private Quaternion _turnRotationVelocity;
 
         private void Awake()
         {
@@ -299,6 +300,7 @@ namespace Atomix.Core
                             Debug.DrawLine(transform.position + Vector3.up, _avoidanceVector + Vector3.up, Color.blue);
                             // Taking the vector from agent position to avoidance barycenter and at it to direction
                             Vector3 _avoidanceDirection = transform.position - _avoidanceVector;
+
                             _direction += _avoidanceDirection.normalized * AvoidanceForce * 1 / _avoidanceDirection.magnitude;
                         }
                     }
@@ -368,7 +370,7 @@ namespace Atomix.Core
             target.y = 0;
             Vector3 mypos = transform.position;
             mypos.y = 0;
-            transform.rotation = Quaternion.LookRotation(target - mypos);
+            transform.rotation = SmoothDamp(transform.rotation, Quaternion.LookRotation(target - mypos), ref _turnRotationVelocity, TurnSmoothTime);
         }
 
         private bool IsStuck()
@@ -389,6 +391,34 @@ namespace Atomix.Core
             }
 
             return false;
+        }
+
+        public static Quaternion SmoothDamp(Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
+        {
+            if (Time.deltaTime < Mathf.Epsilon) return rot;
+            // account for double-cover
+            var Dot = Quaternion.Dot(rot, target);
+            var Multi = Dot > 0f ? 1f : -1f;
+            target.x *= Multi;
+            target.y *= Multi;
+            target.z *= Multi;
+            target.w *= Multi;
+            // smooth damp (nlerp approx)
+            var Result = new Vector4(
+                Mathf.SmoothDamp(rot.x, target.x, ref deriv.x, time),
+                Mathf.SmoothDamp(rot.y, target.y, ref deriv.y, time),
+                Mathf.SmoothDamp(rot.z, target.z, ref deriv.z, time),
+                Mathf.SmoothDamp(rot.w, target.w, ref deriv.w, time)
+            ).normalized;
+
+            // ensure deriv is tangent
+            var derivError = Vector4.Project(new Vector4(deriv.x, deriv.y, deriv.z, deriv.w), Result);
+            deriv.x -= derivError.x;
+            deriv.y -= derivError.y;
+            deriv.z -= derivError.z;
+            deriv.w -= derivError.w;
+
+            return new Quaternion(Result.x, Result.y, Result.z, Result.w);
         }
 
 #if UNITY_EDITOR

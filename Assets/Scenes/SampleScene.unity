@@ -656,13 +656,13 @@ MonoBehaviour:
   WaypointThreshold: 4.5
   DestinationThreshold: 2.5
   SteeringDistance: 6
-  MaximumSpeed: 20
+  MaximumSpeed: 10
   DetectionRadius: 12
   DetectionAreaBonus: 8
   TotalSearchIterations: 50
   AvoidanceRadius: 2
   AvoidanceForce: 2.5
-  TurnSmoothTime: 0.01
+  TurnSmoothTime: 0.05
   SearchAreaMultiplier: 4
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
