@@ -32,6 +32,7 @@ namespace Atomix.Core
         public float SearchAreaDecay = 5;
         public float MaximumStuckTime = .75f;
         public float ApproachTimer = .25f;
+        public float StuckOnPathThreshold = 0.05f;
 
         [Header("Debug")]
         public Transform DebugDestination;
@@ -46,7 +47,7 @@ namespace Atomix.Core
         private Vector3 _lastCheckPosition;
         private Action<bool> _onArrivedEndPath;
         private CharacterController _characterController;
-        private List<Node> _currentPath = new List<Node>();
+        private List<GridNode> _currentPath = new List<GridNode>();
         private Vector3 _currentDestination;
         private Vector2Int _currentPosition;
         private float _stuckTimer;
@@ -199,7 +200,9 @@ namespace Atomix.Core
             {
                 // If a previous move didn't change the distance from destination to a small value, that has a high probability of the agent being stuck.
                 // To avoid recomputing an impossible path until stack overflowing or the hard "Total iteration" cap, the navigation will interrupt in that specific case.
-                if (Mathf.Abs(_lastCurrentDistance - _currentDistance) < .05f)
+                // A value <= 0 will force the agent to search for a path, but it could be pretty CPU expensive
+                // The highest the value, the more the agent will stop early if the path is "complicated (= needs to go back and explore a bigger area)"
+                if (Mathf.Abs(_lastCurrentDistance - _currentDistance) < StuckOnPathThreshold)
                 {
                     Debug.LogError("Abort navigation, stuck on path." + Mathf.Abs(_lastCurrentDistance - _currentDistance));
                     arrivedAtDestination.Invoke(false);
@@ -233,10 +236,8 @@ namespace Atomix.Core
             {
                 PathIndex = _pathIndex;
 
-                //Vector3 toNextWp = (transform.position - path[_pathIndex]);
                 while (true)
                 {
-
                     DistanceToNextWp = (transform.position - path[_pathIndex]).magnitude;
 
                     // Getting a steering position that looks at a given distance from the agent along the path
@@ -246,25 +247,7 @@ namespace Atomix.Core
                     Vector3 _current = transform.position;
                     int _steerPathIndex = _pathIndex;
 
-                    do
-                    {
-                        Vector3 _steerDirection = (path[_steerPathIndex] - transform.position);
-
-                        float _steerDirMagn = _steerDirection.magnitude;
-                        if (_steerDist < _steerDirMagn)
-                        {
-                            _steerPosition = _steerDirection.normalized * _steerDist + _current;
-                            _steerDist = 0;
-                        }
-                        else
-                        {
-                            _steerDist -= _steerDirMagn;
-                            _current = path[_steerPathIndex];
-                            _steerPosition = _steerDirection.normalized * _steerDist + _current;
-                            _steerPathIndex++;
-                        }
-                    }
-                    while (_steerDist > 0 && _steerPathIndex < path.Count);
+                    _steerPosition = GetSteerPosition(path, ref _steerDist, ref _current, ref _steerPathIndex);
 
                     Debug.DrawLine(transform.position + Vector3.up, path[_pathIndex] + Vector3.up, Color.green);
                     Debug.DrawLine(transform.position + Vector3.up, _steerPosition + Vector3.up, Color.red);
@@ -274,36 +257,8 @@ namespace Atomix.Core
                     _direction = _steerPosition - transform.position;
                     _direction.Normalize();
 
-                    // Checking if overlapping whith other agents in a given range
-                    var cols = Physics.OverlapSphere(transform.position, AvoidanceRadius, LayerMask.GetMask("Agents"));
-
-                    // If too close from an agent, avoidance
-                    if (cols.Length > 0)
-                    {
-                        Vector3 _avoidanceVector = Vector3.zero;
-                        int _avoidCount = 0;
-                        for (int i = 0; i < cols.Length; ++i)
-                        {
-                            if (cols[i].gameObject != this.gameObject)
-                            {
-                                _avoidanceVector += cols[i].gameObject.transform.position;
-                                _avoidCount++;
-                            }
-                        }
-
-
-                        if (_avoidCount > 0)
-                        {
-                            // Computing an avoidance Vector as the barycenter of all other agents in range.                            
-                            _avoidanceVector /= _avoidCount;
-
-                            Debug.DrawLine(transform.position + Vector3.up, _avoidanceVector + Vector3.up, Color.blue);
-                            // Taking the vector from agent position to avoidance barycenter and at it to direction
-                            Vector3 _avoidanceDirection = transform.position - _avoidanceVector;
-
-                            _direction += _avoidanceDirection.normalized * AvoidanceForce * 1 / _avoidanceDirection.magnitude;
-                        }
-                    }
+                    // COmpute avoidance of other agents /entities
+                    _direction = ComputeAvoidance(_direction);
 
                     // Smooth daming the direction to smooth the movement a bit more.
                     _direction = Vector3.SmoothDamp(_oldDir, _direction, ref _turnDampingVelocity, TurnSmoothTime);
@@ -357,6 +312,66 @@ namespace Atomix.Core
             yield return null;
 
             arrivedAtDestination.Invoke(true);
+        }
+
+        private Vector3 GetSteerPosition(List<Vector3> path, ref float _steerDist, ref Vector3 _current, ref int _steerPathIndex)
+        {
+            Vector3 _steerPosition;
+            do
+            {
+                Vector3 _steerDirection = (path[_steerPathIndex] - transform.position);
+
+                float _steerDirMagn = _steerDirection.magnitude;
+                if (_steerDist < _steerDirMagn)
+                {
+                    _steerPosition = _steerDirection.normalized * _steerDist + _current;
+                    _steerDist = 0;
+                }
+                else
+                {
+                    _steerDist -= _steerDirMagn;
+                    _current = path[_steerPathIndex];
+                    _steerPosition = _steerDirection.normalized * _steerDist + _current;
+                    _steerPathIndex++;
+                }
+            }
+            while (_steerDist > 0 && _steerPathIndex < path.Count);
+            return _steerPosition;
+        }
+
+        private Vector3 ComputeAvoidance(Vector3 _direction)
+        {
+            // Checking if overlapping whith other agents in a given range
+            var cols = Physics.OverlapSphere(transform.position, AvoidanceRadius, LayerMask.GetMask("Agents"));
+
+            // If too close from an agent, avoidance
+            if (cols.Length > 0)
+            {
+                Vector3 _collisionBarycenter = Vector3.zero;
+                int _collisionCount = 0;
+                for (int i = 0; i < cols.Length; ++i)
+                {
+                    if (cols[i].gameObject != this.gameObject)
+                    {
+                        _collisionBarycenter += cols[i].gameObject.transform.position;
+                        _collisionCount++;
+                    }
+                }
+
+                if (_collisionCount > 0)
+                {
+                    // Computing an avoidance Vector as the barycenter of all other agents in range.                            
+                    _collisionBarycenter /= _collisionCount;
+
+                    Debug.DrawLine(transform.position + Vector3.up, _collisionBarycenter + Vector3.up, Color.blue);
+                    // Taking the vector from agent position to avoidance barycenter and at it to direction
+                    Vector3 _avoidanceDirection = transform.position - _collisionBarycenter;
+                    Vector3 _avoidanceFinalVector = (_avoidanceDirection.normalized * AvoidanceForce * 1 / _avoidanceDirection.magnitude);
+                    _direction += _avoidanceFinalVector;
+                }
+            }
+
+            return _direction;
         }
 
         public void StopNavigation()

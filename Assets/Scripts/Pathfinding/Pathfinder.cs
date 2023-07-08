@@ -11,57 +11,63 @@ namespace Atomix.Pathfinding
         
         public Transform A;
         public Transform B;
-        public List<Node> Path;
+        public List<GridNode> Path;
 
-        public List<Node> closedSetDebug = new List<Node>();
+        public List<GridNode> closedSetDebug = new List<GridNode>();
 
         private NavigationCore _navigationCore;
+
+        private static bool _isComputing = false;
 
         public void Initialize(NavigationCore navigationCore)
         {
             _navigationCore = navigationCore;
-
         }
-        public void FindPath(Vector3 startPos, Vector3 targetPos, Action<bool, List<Node>> resultCallback)
+
+        private Queue<PathfindingRequest> _pathfindingRequests = new Queue<PathfindingRequest>();
+
+        public void FindPath(PathfindingRequest request) => FindPath(request.startPos, request.targetPos, request.resultCallback);
+
+        public void FindPath(Vector3 startPos, Vector3 targetPos, Action<bool, List<GridNode>> resultCallback)
         {
-            closedSetDebug = new List<Node>();
+            // As we can't easily multithread pathfinding computation
+            // Allows only one computing of a pathfinding to execute on the thread at a time
+            // When agents are many, it will improve performances drastically
+            if (_isComputing)
+            {
+                _pathfindingRequests.Enqueue(new PathfindingRequest(startPos, targetPos, resultCallback));
+                return;
+            }
+
+            _isComputing = true;
+
+            closedSetDebug = new List<GridNode>();
 
             Vector2Int startCellPosition = _navigationCore.WorldToGridPosition(startPos);
             Vector2Int targetCellPosition = _navigationCore.WorldToGridPosition(targetPos);
 
-            Node startNode = _navigationCore.Grid[startCellPosition.x, startCellPosition.y]; //, startCellPosition.z];
-            Node targetNode = _navigationCore.Grid[targetCellPosition.x, targetCellPosition.y];//, targetCellPosition.z];
+            GridNode startNode = _navigationCore.GetNodeByPosition(startCellPosition, true); //, startCellPosition.z];
+            GridNode targetNode = _navigationCore.GetNodeByPosition(targetCellPosition, true);//, targetCellPosition.z];
 
-            // Si un des nodes est nul on le créée pour obtenir non pas le chemin mais un nuage de points explorés par l'algorithme
-            // dont on selectionnera le plus proche de la cible pour s'y rendre avant de scanner la zone alentour et de recommencer l'opération
-            if(startNode == null) 
-            {
-                startNode = _navigationCore.CreateNodeOnPosition(startCellPosition.x, startCellPosition.y);
-            }
-
-            if (targetNode == null)
-            {
-                targetNode = _navigationCore.CreateNodeOnPosition(targetCellPosition.x, targetCellPosition.y);
-            }
-
-            Heap<Node> openSet = new Heap<Node>(_navigationCore.GridDimension.x  * 2 * _navigationCore.GridDimension.y * 2);// * grid.GridDimension.z);
-            HashSet<Node> closedSet = new HashSet<Node>();
+            Heap<GridNode> openSet = new Heap<GridNode>(_navigationCore.GridDimension.x * 2 * _navigationCore.GridDimension.y * 2);// * grid.GridDimension.z);
+            HashSet<GridNode> closedSet = new HashSet<GridNode>();
             openSet.Add(startNode);
 
             while (openSet.Count > 0)
             {
-                Node current = openSet.RemoveFirst();
+                GridNode current = openSet.RemoveFirst();
                 closedSet.Add(current);
                 closedSetDebug.Add(current);
 
                 if (current == targetNode)
                 {
                     resultCallback.Invoke(true, RetracePath(startNode, targetNode));
+                    OnPathfindingComputationEnded();
                 }
 
-                foreach (Node neighbour in _navigationCore.GetNeighbours(current))
-                {                  
-                    if(neighbour == null)
+                foreach (GridNode neighbour in _navigationCore.GetNeighbours(current))
+                {
+                    if (neighbour == null)
                     {
                         continue;
                     }
@@ -77,7 +83,7 @@ namespace Atomix.Pathfinding
                         neighbour.GCost = newCostToNeighbour;
                         neighbour.HCost = GetHeuristic(neighbour, targetNode);
                         neighbour.Parent = current;
-                        
+
                         //Debug.LogError($"Set parent from {neighbour.Position} to {current.Position}");
                         if (!openSet.Contains(neighbour))
                         {
@@ -87,12 +93,25 @@ namespace Atomix.Pathfinding
                 }
             }
             // Selection du node le plus proche de targetNode parmis le nuage de points explorés depuis le startNode (aka closedSet)
-            Node closestFromTarget = _navigationCore.FindClosestNodeFromList(closedSet.ToList(), targetNode);
+            GridNode closestFromTarget = _navigationCore.FindClosestNodeFromList(closedSet.ToList(), targetNode);
 
             resultCallback.Invoke(false, RetracePartialPath(startNode, closestFromTarget));
+
+            OnPathfindingComputationEnded();
         }
 
-        private void ClearSet(Node[] set)
+        private void OnPathfindingComputationEnded()
+        {
+            _isComputing = false;
+
+            if (_pathfindingRequests.Count > 0)
+            {
+                var request = _pathfindingRequests.Dequeue();
+                FindPath(request);
+            }
+        }
+
+        private void ClearSet(GridNode[] set)
         {
             for (int i = 0; i < set.Length; ++i)
             {
@@ -100,10 +119,10 @@ namespace Atomix.Pathfinding
             }
         }
 
-        private List<Node> RetracePath(Node startNode, Node endNode)
+        private List<GridNode> RetracePath(GridNode startNode, GridNode endNode)
         {
-            List<Node> path = new List<Node>();
-            Node currentNode = endNode;
+            List<GridNode> path = new List<GridNode>();
+            GridNode currentNode = endNode;
 
             while (currentNode != startNode)
             {
@@ -118,10 +137,10 @@ namespace Atomix.Pathfinding
             return path;
         }
 
-        private List<Node> RetracePartialPath(Node startNode, Node endNode)
+        private List<GridNode> RetracePartialPath(GridNode startNode, GridNode endNode)
         {
-            List<Node> path = new List<Node>();
-            Node currentNode = endNode;
+            List<GridNode> path = new List<GridNode>();
+            GridNode currentNode = endNode;
 
             while (currentNode != startNode)
             {
@@ -140,14 +159,14 @@ namespace Atomix.Pathfinding
             return path;
         }
 
-        float GetHeuristic(Node nodeA, Node nodeB)
+        float GetHeuristic(GridNode nodeA, GridNode nodeB)
         {
             //return Mathf.Max(0, Mathf.Abs(nodeB.Position.x - nodeA.Position.x) + Mathf.Abs(nodeB.Position.z - nodeA.Position.z));
             return NavigationCore.GetManhattanDistance(nodeA.Position, nodeB.Position);
             //return GetDistance(nodeA, nodeB);
         }
 
-        int GetDistance(Node nodeA, Node nodeB)
+        int GetDistance(GridNode nodeA, GridNode nodeB)
         {
             int dstX = Mathf.Abs(nodeA.Position.x - nodeB.Position.x);
             int dstY = Mathf.Abs(nodeA.Position.z - nodeB.Position.x);
