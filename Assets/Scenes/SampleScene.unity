@@ -144,7 +144,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &10609600
 Transform:
   m_ObjectHideFlags: 0
@@ -285,7 +285,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -311,7 +311,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &16601609
 Transform:
   m_ObjectHideFlags: 0
@@ -452,7 +452,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -669,7 +669,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.5
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -847,7 +847,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &171725202
 Transform:
   m_ObjectHideFlags: 0
@@ -988,7 +988,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -1014,7 +1014,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &201723315
 Transform:
   m_ObjectHideFlags: 0
@@ -1155,7 +1155,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -1181,7 +1181,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &227861936
 Transform:
   m_ObjectHideFlags: 0
@@ -1322,7 +1322,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -1348,7 +1348,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &281852014
 Transform:
   m_ObjectHideFlags: 0
@@ -1489,7 +1489,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -1515,7 +1515,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &324699653
 Transform:
   m_ObjectHideFlags: 0
@@ -1656,7 +1656,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -1682,7 +1682,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &326057428
 Transform:
   m_ObjectHideFlags: 0
@@ -1823,7 +1823,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -2179,7 +2179,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &506081906
 Transform:
   m_ObjectHideFlags: 0
@@ -2320,7 +2320,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -2891,7 +2891,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1068353458
 Transform:
   m_ObjectHideFlags: 0
@@ -3032,7 +3032,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -3487,7 +3487,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1340212540
 Transform:
   m_ObjectHideFlags: 0
@@ -3628,7 +3628,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -3737,7 +3737,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1488741925
 Transform:
   m_ObjectHideFlags: 0
@@ -3878,7 +3878,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -4290,7 +4290,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1747308393
 Transform:
   m_ObjectHideFlags: 0
@@ -4431,7 +4431,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -4632,7 +4632,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1800955077
 Transform:
   m_ObjectHideFlags: 0
@@ -4773,7 +4773,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
@@ -4799,7 +4799,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1859325330
 Transform:
   m_ObjectHideFlags: 0
@@ -4940,7 +4940,7 @@ MonoBehaviour:
   SearchAreaDecay: 5
   MaximumStuckTime: 0.35
   ApproachTimer: 0.25
-  StuckOnPathThreshold: 0.05
+  StuckOnPathThreshold: 0.001
   DebugDestination: {fileID: 1631065366}
   PathIndex: 0
   DistanceToNextWp: 0
