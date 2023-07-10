@@ -93,7 +93,15 @@ namespace Atomix.Core
             _stuckTimer = 0;
             _lastCurrentDistance = 0;
 
-            NavigateTo(DebugDestination.position, (result) => Debug.Log(result), 0, 0);
+            if (NavigationCore.GetNodeByWorldPosition(destination).NodeState == NodeState.Walkable)
+            {
+                NavigateTo(destination, (result) => Debug.Log(result), 0, 0);
+            }
+            else
+            {
+                Debug.LogError("Destination is not walkable.");
+                arrivedAtDestination.Invoke(false);
+            }
         }
 
         private void NavigateTo(Vector3 destination, Action<bool> arrivedAtDestination, float searchAreaMultiplier = 0, int totalIterations = 0, int noPathFoundIterations = 0)
@@ -113,80 +121,89 @@ namespace Atomix.Core
 
             totalIterations++;
 
-            _pathfinder.FindPath(transform.position, destination, (found_complete_path, path) =>
+            if (Vector3.Distance(transform.position, NavigationCore.WorldToGridWorldPosition(destination)) <= NavigationCore.DetectionThickness)
             {
-                if (path != null)
+                Debug.Log("No path computation needed here.");
+                StartCoroutine(NavigationRoutine(new List<Vector3>() { destination }, (result) => _onArrivedEndPath.Invoke(result)));
+            }
+            else
+            {
+                _pathfinder.FindPath(transform.position, destination, (found_complete_path, path) =>
                 {
-                    _currentPath = path;
-
-                    if (path.Count > 0)
+                    if (path != null)
                     {
-                        noPathFoundIterations = 0;
+                        _currentPath = path;
 
-                        List<Vector3> _pathList = path.Select(t => t.WorldPosition).ToList();
-
-                        if ((_pathList[_pathList.Count - 1] - destination).magnitude <= WaypointThreshold)
+                        if (path.Count > 0)
                         {
-                            _pathList.Add(destination);
-                        }
+                            noPathFoundIterations = 0;
 
-                        if (found_complete_path)
-                        {
-                            Debug.LogError("found_complete_path.");
+                            List<Vector3> _pathList = path.Select(t => t.WorldPosition).ToList();
 
-                            // GOTO
-                            searchAreaMultiplier = 0;
+                            if ((_pathList[_pathList.Count - 1] - destination).magnitude <= WaypointThreshold)
+                            {
+                                _pathList.Add(destination);
+                            }
 
-                            StartCoroutine(NavigationRoutine(_pathList, (result) => _onArrivedEndPath.Invoke(result)));
+                            if (found_complete_path)
+                            {
+                                Debug.Log("found_complete_path.");
+
+                                // GOTO
+                                searchAreaMultiplier = 0;
+
+                                StartCoroutine(NavigationRoutine(_pathList, (result) => _onArrivedEndPath.Invoke(result)));
+                            }
+                            else
+                            {
+                                Debug.Log($"found_partial_path. lenght = {path.Count}");
+
+                                // PARTIAL PATH :
+                                // Go at destination, then compute grid in detection radius and redo until arrived at destination
+                                StartCoroutine(NavigationRoutine(_pathList, (result) =>
+                                {
+                                    OnEndPartialPath(destination, arrivedAtDestination, totalIterations, noPathFoundIterations);
+                                }));
+                            }
                         }
                         else
                         {
-                            Debug.LogError($"found_partial_path. lenght = {path.Count}");
-
-                            // PARTIAL PATH :
-                            // Go at destination, then compute grid in detection radius and redo until arrived at destination
-                            StartCoroutine(NavigationRoutine(_pathList, (result) =>
+                            float _currentDistance = (transform.position - destination).magnitude;
+                            if (_currentDistance <= WaypointThreshold)
                             {
-                                OnEndPartialPath(destination, arrivedAtDestination, totalIterations, noPathFoundIterations);
-                            }));
+                                Debug.Log("Path count was 0. Arrived at destination.");
+                                arrivedAtDestination.Invoke(true);
+                            }
+                            else
+                            {
+                                if (noPathFoundIterations >= 3)
+                                {
+                                    Debug.Log("Too much wrong try iterations.");
+                                    arrivedAtDestination.Invoke(false);
+                                    return;
+                                }
+
+                                // Probly no path found to destination. Search around 
+                                Debug.Log("Path count was 0. Try search bigger area and retry." + totalIterations + " " + _currentDistance);
+
+                                NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
+                                SearchAreaMultiplier++;
+                                noPathFoundIterations++;
+                                NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, totalIterations, noPathFoundIterations);
+                            }
+
                         }
+
                     }
                     else
                     {
-                        float _currentDistance = (transform.position - destination).magnitude;
-                        if (_currentDistance <= WaypointThreshold)
-                        {
-                            arrivedAtDestination.Invoke(true);
-                            Debug.LogError("Path count was 0. Arrived at destination.");
-                        }
-                        else
-                        {
-                            if (noPathFoundIterations >= 3)
-                            {
-                                Debug.LogError("Too much wrong try iterations.");
-                                arrivedAtDestination.Invoke(false);
-                                return;
-                            }
-
-                            // Probly no path found to destination. Search around 
-                            Debug.LogError("Path count was 0. Try search bigger area and retry." + totalIterations + " " + _currentDistance);
-
-                            NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
-                            SearchAreaMultiplier++;
-                            noPathFoundIterations++;
-                            NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, totalIterations, noPathFoundIterations);
-                        }
-
+                        Debug.Log("No path avalaible.");
+                        arrivedAtDestination.Invoke(false);
                     }
 
-                }
-                else
-                {
-                    Debug.LogError("No path avalaible.");
-                    arrivedAtDestination.Invoke(false);
-                }
+                });
+            }
 
-            });
         }
 
         private void OnEndPartialPath(Vector3 destination, Action<bool> arrivedAtDestination, int searchIterations, int noPathFoundIterations)
@@ -204,14 +221,14 @@ namespace Atomix.Core
                 // The highest the value, the more the agent will stop early if the path is "complicated (= needs to go back and explore a bigger area)"
                 if (Mathf.Abs(_lastCurrentDistance - _currentDistance) < StuckOnPathThreshold)
                 {
-                    Debug.LogError("Abort navigation, stuck on path." + Mathf.Abs(_lastCurrentDistance - _currentDistance));
+                    Debug.Log("Abort navigation, stuck on path." + Mathf.Abs(_lastCurrentDistance - _currentDistance));
                     arrivedAtDestination.Invoke(false);
                 }
                 else
                 {
                     _lastCurrentDistance = _currentDistance;
 
-                    Debug.LogError("Arrived at end of partial path. Analyse navmesh and retry." + searchIterations + " " + _currentDistance);
+                    Debug.Log("Arrived at end of partial path. Analyse navmesh and retry." + searchIterations + " " + _currentDistance);
 
                     NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
 
@@ -439,7 +456,7 @@ namespace Atomix.Core
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if(_currentPath != null)
+            if (_currentPath != null)
             {
                 Gizmos.color = Color.blue;
                 foreach (var v in _currentPath)
@@ -447,7 +464,7 @@ namespace Atomix.Core
                     Gizmos.DrawCube(v.WorldPosition, Vector3.one);
                 }
             }
-            
+
         }
 #endif
     }

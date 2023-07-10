@@ -30,7 +30,7 @@ namespace Atomix.Helpers
 
                 Ray camRay = Camera.main.ScreenPointToRay(Input.mousePosition);
                 // For debug purposes
-                Debug.DrawRay(camRay.origin, camRay.direction * 50, Color.blue, 15);
+
                 if (Physics.Raycast(camRay, out var hitDebug, float.MaxValue))
                 {
                     Debug.DrawLine(hitDebug.point - Vector3.forward * 1f, hitDebug.point + Vector3.forward * 1f, Color.red, .1f);

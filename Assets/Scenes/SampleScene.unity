@@ -561,7 +561,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &122016201
 Transform:
   m_ObjectHideFlags: 0
@@ -1014,7 +1014,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &201723315
 Transform:
   m_ObjectHideFlags: 0
@@ -1023,7 +1023,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 201723314}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 34.3, y: -41.9, z: -77.5}
+  m_LocalPosition: {x: -74.7, y: -68.29, z: 9}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1905,14 +1905,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
-  m_LocalRotation: {x: 0.26529336, y: 0.6658412, z: -0.27580047, w: 0.6404756}
-  m_LocalPosition: {x: -99.2, y: 12.7, z: 11.9}
+  m_LocalRotation: {x: 0.33014953, y: 0.6337254, z: -0.343226, w: 0.6095813}
+  m_LocalPosition: {x: -96.5, y: 37.9, z: 11.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 45, y: 92.225, z: 0}
+  m_LocalEulerAnglesHint: {x: 56.88, y: 92.225, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4061,6 +4061,7 @@ GameObject:
   - component: {fileID: 1621009996}
   - component: {fileID: 1621009998}
   - component: {fileID: 1621009999}
+  - component: {fileID: 1621010000}
   m_Layer: 0
   m_Name: NavigationCore
   m_TagString: Untagged
@@ -4081,7 +4082,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NodeRadius: 4
-  DetectionThickness: 3
+  DetectionThickness: 2.7
   GridDimension: {x: 25, y: 25}
   BakeOnAwake: 0
   WalkableLayers:
@@ -4089,12 +4090,11 @@ MonoBehaviour:
     m_Bits: 129
   CurrentClosestNodePosition: {x: 13, y: 30}
   GridDictionnaryLenght: 0
-  percentX: 0.44726932
-  percentY: 1
   DoDebugDraw: 1
   DrawGrid: 0
   DrawWalkable: 1
   DrawUnwalkable: 1
+  DebugGridMesh: {fileID: 0}
 --- !u!4 &1621009997
 Transform:
   m_ObjectHideFlags: 0
@@ -4154,6 +4154,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Target: {fileID: 1631065366}
+--- !u!114 &1621010000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621009995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ff14c0ea2db7a44f8a0597c16203529, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1631065365
 GameObject:
   m_ObjectHideFlags: 0

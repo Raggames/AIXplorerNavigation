@@ -7,16 +7,8 @@ namespace Atomix.Pathfinding
 {
     public class Pathfinder : MonoBehaviour
     {
-        [HideInInspector] public float HallwayPathRatio = 5;
-        
-        public Transform A;
-        public Transform B;
-        public List<GridNode> Path;
-
-        public List<GridNode> closedSetDebug = new List<GridNode>();
-
+        private List<GridNode> _path;
         private NavigationCore _navigationCore;
-
         private static bool _isComputing = false;
 
         public void Initialize(NavigationCore navigationCore)
@@ -41,8 +33,6 @@ namespace Atomix.Pathfinding
 
             _isComputing = true;
 
-            closedSetDebug = new List<GridNode>();
-
             Vector2Int startCellPosition = _navigationCore.WorldToGridPosition(startPos);
             Vector2Int targetCellPosition = _navigationCore.WorldToGridPosition(targetPos);
 
@@ -57,7 +47,7 @@ namespace Atomix.Pathfinding
             {
                 GridNode current = openSet.RemoveFirst();
                 closedSet.Add(current);
-                closedSetDebug.Add(current);
+                //closedSetDebug.Add(current);
 
                 if (current == targetNode)
                 {
@@ -92,9 +82,9 @@ namespace Atomix.Pathfinding
                     }
                 }
             }
+
             // Selection du node le plus proche de targetNode parmis le nuage de points explorés depuis le startNode (aka closedSet)
             GridNode closestFromTarget = _navigationCore.FindClosestNodeFromList(closedSet.ToList(), targetNode);
-
             resultCallback.Invoke(false, RetracePartialPath(startNode, closestFromTarget));
 
             OnPathfindingComputationEnded();
@@ -161,9 +151,7 @@ namespace Atomix.Pathfinding
 
         float GetHeuristic(GridNode nodeA, GridNode nodeB)
         {
-            //return Mathf.Max(0, Mathf.Abs(nodeB.Position.x - nodeA.Position.x) + Mathf.Abs(nodeB.Position.z - nodeA.Position.z));
             return NavigationCore.GetManhattanDistance(nodeA.Position, nodeB.Position);
-            //return GetDistance(nodeA, nodeB);
         }
 
         int GetDistance(GridNode nodeA, GridNode nodeB)
@@ -176,37 +164,20 @@ namespace Atomix.Pathfinding
             return 14 * dstX + 10 * (dstY - dstX);
         }
 
-        private void OnGUI()
-        {            
-            if (GUI.Button(new Rect(0, 40, 200, 30), "Test Path"))
-            {
-                FindPath(A.position, B.position, (foundComplete, path) =>
-                {
-                    Path = path;
-                } );
-            }
-        }
-
         void OnDrawGizmos()
         {
-            if(Path != null)
+            if(_path != null)
             {
-                foreach(var path in Path)
+                foreach(var path in _path)
                 {
                     Gizmos.color = Color.blue;
                     Gizmos.DrawCube(path.WorldPosition, Vector3.one);
                 }
 
-                foreach (var node in closedSetDebug)
+               /* foreach (var node in closedSetDebug)
                 {
                     Gizmos.color = Color.red;
                     Gizmos.DrawCube(node.WorldPosition, Vector3.one * .3f);
-                }
-
-               /* foreach (var node in openSetDebug)
-                {
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawCube(node.WorldPosition, Vector3.one);
                 }*/
             }
         }
