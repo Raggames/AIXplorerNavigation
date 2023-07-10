@@ -152,7 +152,6 @@ public class NavigationCore : MonoBehaviour
         float rangeSquared = range * range;
         position.y = 0;
 
-
         Vector2Int gridPosition = WorldToGridPosition(position);
 
         for (int x = -range; x < range; ++x)

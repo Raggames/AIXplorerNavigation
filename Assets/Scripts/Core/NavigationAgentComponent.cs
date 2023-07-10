@@ -94,7 +94,7 @@ namespace Atomix.Core
             _lastCurrentDistance = 0;
 
             if (NavigationCore.GetNodeByWorldPosition(destination).NodeState == NodeState.Walkable)
-            {
+            {               
                 NavigateTo(destination, (result) => Debug.Log(result), 0, 0);
             }
             else

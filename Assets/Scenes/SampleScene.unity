@@ -255,9 +255,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 10609600}
-  B: {fileID: 1631065366}
 --- !u!114 &10609606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -422,9 +419,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 16601609}
-  B: {fileID: 1631065366}
 --- !u!114 &16601615
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -704,9 +698,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 122016201}
-  B: {fileID: 1631065366}
 --- !u!1 &142059758
 GameObject:
   m_ObjectHideFlags: 0
@@ -740,6 +731,7 @@ Transform:
   - {fileID: 1783297762}
   - {fileID: 1227075598}
   - {fileID: 2009812233}
+  - {fileID: 664303853}
   m_Father: {fileID: 0}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -958,9 +950,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 171725202}
-  B: {fileID: 1631065366}
 --- !u!114 &171725208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1125,9 +1114,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 201723315}
-  B: {fileID: 1631065366}
 --- !u!114 &201723321
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1292,9 +1278,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 227861936}
-  B: {fileID: 1631065366}
 --- !u!114 &227861942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1459,9 +1442,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 281852014}
-  B: {fileID: 1631065366}
 --- !u!114 &281852020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1626,9 +1606,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 324699653}
-  B: {fileID: 1631065366}
 --- !u!114 &324699659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1793,9 +1770,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 326057428}
-  B: {fileID: 1631065366}
 --- !u!114 &326057434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1906,7 +1880,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   m_LocalRotation: {x: 0.33014953, y: 0.6337254, z: -0.343226, w: 0.6095813}
-  m_LocalPosition: {x: -96.5, y: 37.9, z: 11.9}
+  m_LocalPosition: {x: -96.5, y: 89.4, z: 11.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2087,14 +2061,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 435620854}
-  m_LocalRotation: {x: -0, y: 0.20243883, z: -0, w: 0.9792949}
-  m_LocalPosition: {x: -67.2, y: -0.3, z: -91.1}
+  m_LocalRotation: {x: 0.06779147, y: 0.21505424, z: 0.17739202, w: 0.9579604}
+  m_LocalPosition: {x: -67.2, y: 1, z: -91.1}
   m_LocalScale: {x: 32.50949, y: 48.962288, z: 122.655426}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 142059759}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 23.359, z: 0}
+  m_LocalEulerAnglesHint: {x: 3.072, y: 25.894, z: 21.688}
 --- !u!65 &435620856
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2290,9 +2264,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 506081906}
-  B: {fileID: 1631065366}
 --- !u!114 &506081912
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2571,6 +2542,103 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 600893377}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &664303852
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 664303853}
+  - component: {fileID: 664303856}
+  - component: {fileID: 664303855}
+  - component: {fileID: 664303854}
+  m_Layer: 6
+  m_Name: Cube1 (5)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &664303853
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 664303852}
+  m_LocalRotation: {x: -0.26325265, y: -0.61602366, z: -0.04014154, w: 0.74135125}
+  m_LocalPosition: {x: 38.6, y: 58.9, z: 16.8}
+  m_LocalScale: {x: 62.033348, y: 38.763577, z: 38.763577}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 142059759}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: -26.09, y: -83.451, z: 17.15}
+--- !u!65 &664303854
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 664303852}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &664303855
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 664303852}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &664303856
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 664303852}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &720266087
 GameObject:
@@ -3002,9 +3070,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 1068353458}
-  B: {fileID: 1631065366}
 --- !u!114 &1068353464
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3146,14 +3211,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1227075597}
-  m_LocalRotation: {x: -0.25589988, y: -0.23487818, z: 0.08040997, w: 0.9342814}
+  m_LocalRotation: {x: 0.13447566, y: -0.24752963, z: -0.019041186, w: 0.95931375}
   m_LocalPosition: {x: -48, y: 21.8, z: -5.9}
-  m_LocalScale: {x: 15.011841, y: 15.011841, z: 15.011841}
+  m_LocalScale: {x: 21.88818, y: 21.88818, z: 21.88818}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 142059759}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: -26.129, y: -32.322, z: 17.533}
+  m_LocalEulerAnglesHint: {x: 14.394, y: -29.709, z: -6.111}
 --- !u!65 &1227075599
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3598,9 +3663,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 1340212540}
-  B: {fileID: 1631065366}
 --- !u!114 &1340212546
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3848,9 +3910,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 1488741925}
-  B: {fileID: 1631065366}
 --- !u!114 &1488741931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4413,9 +4472,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 1747308393}
-  B: {fileID: 1631065366}
 --- !u!114 &1747308399
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4474,14 +4530,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1783297761}
-  m_LocalRotation: {x: 0.07763003, y: -0.24822222, z: -0.004400747, w: 0.96557754}
-  m_LocalPosition: {x: -87.1, y: 7.9, z: 20.7}
+  m_LocalRotation: {x: -0.079830125, y: -0.24565585, z: 0.035872214, w: 0.96539813}
+  m_LocalPosition: {x: -87.1, y: 4.2, z: 20.7}
   m_LocalScale: {x: 40.306736, y: 40.306736, z: 40.306736}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 142059759}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 8.495, y: -29.036, z: -2.726}
+  m_LocalEulerAnglesHint: {x: -7.846, y: -28.985, z: 6.287}
 --- !u!65 &1783297763
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4755,9 +4811,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 1800955077}
-  B: {fileID: 1631065366}
 --- !u!114 &1800955083
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4922,9 +4975,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a1a5c53d16ff0242a044e0a6a80b171, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  HallwayPathRatio: 5
-  A: {fileID: 1859325330}
-  B: {fileID: 1631065366}
 --- !u!114 &1859325336
 MonoBehaviour:
   m_ObjectHideFlags: 0
