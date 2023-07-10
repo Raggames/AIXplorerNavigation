@@ -13,12 +13,14 @@ namespace Atomix.Pathfinding
         public Vector3 startPos;
         public Vector3 targetPos;
         public Action<bool, List<GridNode>> resultCallback;
+        public bool IsAsync;
 
-        public PathfindingRequest(Vector3 startPos, Vector3 targetPos, Action<bool, List<GridNode>> resultCallback)
+        public PathfindingRequest(Vector3 startPos, Vector3 targetPos, Action<bool, List<GridNode>> resultCallback, bool isAsync)
         {
             this.startPos = startPos;
             this.targetPos = targetPos;
             this.resultCallback = resultCallback;
+            this.IsAsync = isAsync;
         }
     }
 }

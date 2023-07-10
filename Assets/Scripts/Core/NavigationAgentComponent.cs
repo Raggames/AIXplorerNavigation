@@ -36,6 +36,7 @@ namespace Atomix.Core
 
         [Header("Debug")]
         public Transform DebugDestination;
+        public bool ShowDebugPath;
         public int PathIndex;
         public float DistanceToNextWp;
         public float DistanceToDestination;
@@ -76,7 +77,23 @@ namespace Atomix.Core
                 if (_isNavigating)
                     StopNavigation();
 
+                Debug.LogError(this.gameObject + " execute navigating !");
+
                 ExecuteNavigation(DebugDestination.position, (result) => Debug.Log(result));
+            }
+
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                if (_isNavigating)
+                    StopNavigation();
+
+                Debug.LogError(this.gameObject + " execute navigating random!");
+
+                Vector3 random = new Vector3(UnityEngine.Random.Range(-100, 100), 0, UnityEngine.Random.Range(-100, 100));
+                float y = Terrain.activeTerrain.SampleHeight(random);
+                random = new Vector3(random.x, y, random.z);
+
+                ExecuteNavigation(random, (result) => Debug.Log(result));
             }
 
             if (_isNavigating)
@@ -94,7 +111,7 @@ namespace Atomix.Core
             _lastCurrentDistance = 0;
 
             if (NavigationCore.GetNodeByWorldPosition(destination).NodeState == NodeState.Walkable)
-            {               
+            {
                 NavigateTo(destination, (result) => Debug.Log(result), 0, 0);
             }
             else
@@ -128,7 +145,7 @@ namespace Atomix.Core
             }
             else
             {
-                _pathfinder.FindPath(transform.position, destination, (found_complete_path, path) =>
+                _pathfinder.FindPathAsync(transform.position, destination, (found_complete_path, path) =>
                 {
                     if (path != null)
                     {
@@ -139,7 +156,7 @@ namespace Atomix.Core
                             noPathFoundIterations = 0;
 
                             List<Vector3> _pathList = path.Select(t => t.WorldPosition).ToList();
-
+                            
                             if ((_pathList[_pathList.Count - 1] - destination).magnitude <= WaypointThreshold)
                             {
                                 _pathList.Add(destination);
@@ -401,6 +418,21 @@ namespace Atomix.Core
             return _direction;
         }
 
+        private float GetPathDistance(List<Vector3> path)
+        {
+            float dist = (transform.position - path[0]).magnitude;
+
+            if (path.Count > 1)
+            {
+                for (int i = 1; i < path.Count; ++i)
+                {
+                    dist += (path[i] - path[i - 1]).magnitude;
+                }
+            }
+
+            return dist;
+        }
+
         public void StopNavigation()
         {
             _isNavigating = false;
@@ -466,7 +498,7 @@ namespace Atomix.Core
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
-            if (_currentPath != null)
+            if (ShowDebugPath && _currentPath != null)
             {
                 Gizmos.color = Color.blue;
                 foreach (var v in _currentPath)

@@ -1,25 +1,35 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace Atomix.Pathfinding
 {
-    public class Pathfinder : MonoBehaviour
+    public partial class Pathfinder : MonoBehaviour
     {
         private List<GridNode> _path;
         private NavigationCore _navigationCore;
         private static bool _isComputing = false;
+        private static object lockObject = new object();
 
         public void Initialize(NavigationCore navigationCore)
         {
             _navigationCore = navigationCore;
         }
 
-        private Queue<PathfindingRequest> _pathfindingRequests = new Queue<PathfindingRequest>();
+        private static Queue<PathfindingRequest> _pathfindingRequests = new Queue<PathfindingRequest>();
 
         public void FindPath(PathfindingRequest request) => FindPath(request.startPos, request.targetPos, request.resultCallback);
+
+        /// <summary>
+        /// Compute a pathfinding on the main thread and once at a time
+        /// </summary>
+        /// <param name="startPos"></param>
+        /// <param name="targetPos"></param>
+        /// <param name="resultCallback"></param>
 
         public void FindPath(Vector3 startPos, Vector3 targetPos, Action<bool, List<GridNode>> resultCallback)
         {
@@ -28,7 +38,7 @@ namespace Atomix.Pathfinding
             // When agents are many, it will improve performances drastically
             if (_isComputing)
             {
-                _pathfindingRequests.Enqueue(new PathfindingRequest(startPos, targetPos, resultCallback));
+                _pathfindingRequests.Enqueue(new PathfindingRequest(startPos, targetPos, resultCallback, false));
                 return;
             }
 
@@ -91,6 +101,92 @@ namespace Atomix.Pathfinding
             OnPathfindingComputationEnded();
         }
 
+        public async void FindPathAsync(PathfindingRequest request) => FindPathAsync(request.startPos, request.targetPos, request.resultCallback);
+
+        /// <summary>
+        /// Compute a pathfinding on another thread but once at a time
+        /// </summary>
+        /// <param name="startPos"></param>
+        /// <param name="targetPos"></param>
+        /// <param name="resultCallback"></param>
+        public async void FindPathAsync(Vector3 startPos, Vector3 targetPos, Action<bool, List<GridNode>> resultCallback)
+        {
+            // When agents are many, it will improve performances drastically
+            if (_isComputing)
+            {
+                _pathfindingRequests.Enqueue(new PathfindingRequest(startPos, targetPos, resultCallback, true));
+
+                return;
+            }
+
+            _isComputing = true;
+
+            Vector2Int startCellPosition = _navigationCore.WorldToGridPosition(startPos);
+            Vector2Int targetCellPosition = _navigationCore.WorldToGridPosition(targetPos);
+
+            GridNode startNode = _navigationCore.GetNodeByPosition(startCellPosition, true); //, startCellPosition.z];
+            GridNode targetNode = _navigationCore.GetNodeByPosition(targetCellPosition, true);//, targetCellPosition.z];
+
+            var pathfindingAsyncResponse = await Task.Run(() => ComputePath(startNode, targetNode, resultCallback));
+
+            OnPathfindingComputationEnded();
+
+            pathfindingAsyncResponse.OnComputedCallback.Invoke(pathfindingAsyncResponse.IsCompletePath, pathfindingAsyncResponse.Path);
+        }
+
+        private AsyncPathfindingResponse ComputePath(GridNode startNode, GridNode targetNode, Action<bool, List<GridNode>> resultCallback)
+        {
+            Heap<GridNode> openSet = new Heap<GridNode>(_navigationCore.GridDimension.x * 2 * _navigationCore.GridDimension.y * 2);// * grid.GridDimension.z);
+            HashSet<GridNode> closedSet = new HashSet<GridNode>();
+            openSet.Add(startNode);
+
+            lock (lockObject)
+            {
+                while (openSet.Count > 0)
+                {
+                    GridNode current = openSet.RemoveFirst();
+                    closedSet.Add(current);
+                    //closedSetDebug.Add(current);
+
+                    if (current == targetNode)
+                    {
+                        return new AsyncPathfindingResponse(true, RetracePath(startNode, targetNode), resultCallback);
+                    }
+
+                    foreach (GridNode neighbour in _navigationCore.GetNeighbours(current))
+                    {
+                        if (neighbour == null)
+                        {
+                            continue;
+                        }
+
+                        if (closedSet.Contains(neighbour) || neighbour.NodeState == NodeState.Unwalkable)
+                        {
+                            continue;
+                        }
+
+                        float newCostToNeighbour = current.GCost + GetHeuristic(current, neighbour);
+                        if (newCostToNeighbour < neighbour.GCost || !openSet.Contains(neighbour))
+                        {
+                            neighbour.GCost = newCostToNeighbour;
+                            neighbour.HCost = GetHeuristic(neighbour, targetNode);
+                            neighbour.Parent = current;
+
+                            //Debug.LogError($"Set parent from {neighbour.Position} to {current.Position}");
+                            if (!openSet.Contains(neighbour))
+                            {
+                                openSet.Add(neighbour);
+                            }
+                        }
+                    }
+                }
+
+                // Selection du node le plus proche de targetNode parmis le nuage de points explorés depuis le startNode (aka closedSet)
+                GridNode closestFromTarget = _navigationCore.FindClosestNodeFromList(closedSet.ToList(), targetNode);
+                return new AsyncPathfindingResponse(false, RetracePartialPath(startNode, closestFromTarget), resultCallback);
+            }
+        }
+
         private void OnPathfindingComputationEnded()
         {
             _isComputing = false;
@@ -98,7 +194,11 @@ namespace Atomix.Pathfinding
             if (_pathfindingRequests.Count > 0)
             {
                 var request = _pathfindingRequests.Dequeue();
-                FindPath(request);
+
+                if (request.IsAsync)
+                    FindPathAsync(request);
+                else
+                    FindPath(request);
             }
         }
 
@@ -167,19 +267,13 @@ namespace Atomix.Pathfinding
 
         void OnDrawGizmos()
         {
-            if(_path != null)
+            if (_path != null)
             {
-                foreach(var path in _path)
+                foreach (var path in _path)
                 {
                     Gizmos.color = Color.blue;
                     Gizmos.DrawCube(path.WorldPosition, Vector3.one);
                 }
-
-               /* foreach (var node in closedSetDebug)
-                {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawCube(node.WorldPosition, Vector3.one * .3f);
-                }*/
             }
         }
     }

@@ -31,8 +31,14 @@ public class NavigationCore : MonoBehaviour
     [Header("Grid Detection Parameters")]
     public LayerMask WalkableLayers;
 
+    [Header("Debug")]
     public Vector2Int CurrentClosestNodePosition;
     public int GridDictionnaryLenght;
+    public bool DoDebugDraw = true;
+    public bool DrawGrid = false;
+    public bool DrawWalkable = false;
+    public bool DrawUnwalkable = true;
+
 
     public Dictionary<Vector2Int, GridNode> GridDictionnary { get; set; } = new Dictionary<Vector2Int, GridNode>();
 
@@ -52,9 +58,9 @@ public class NavigationCore : MonoBehaviour
 
         if (BakeOnAwake)
         {
-            for (int x = 0; x < 2 * GridDimension.x; ++x)
+            for (int x = -GridDimension.x; x < GridDimension.x; ++x)
             {
-                for (int y = 0; y < 2 * GridDimension.y; ++y)
+                for (int y = -GridDimension.y; y < GridDimension.y; ++y)
                 {
                     CreateNodeOnPosition(x, y);
                 }
@@ -88,10 +94,7 @@ public class NavigationCore : MonoBehaviour
 
     public GridNode CreateNodeOnPosition(int x, int y)
     {
-        int indexX = x - GridDimension.x;
-        int indexZ = y - GridDimension.y;
         var position = new Vector2Int(x, y);
-
         GridDictionnary.Add(position, new GridNode() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(x, y) });
 
         RaycastHit hit;
@@ -288,35 +291,18 @@ public class NavigationCore : MonoBehaviour
     {
         for (int i = 0; i < positions.Length; ++i)
         {
-            GridNode node = null;
-            if (GridDictionnary.TryGetValue(new Vector2Int(positions[i].x, positions[i].z), out node))
+            if (IsInGrid(positions[i]))
             {
-                neighbours.Add(node);
-            }
+                GridNode node = null;
+                if (GridDictionnary.TryGetValue(new Vector2Int(positions[i].x, positions[i].z), out node))
+                {
+                    neighbours.Add(node);
+                }
+            }            
         }
     }
-
-    public void Traverse(Action<Vector3Int> onCell)
-    {
-        for (int x = 0; x < GridDimension.x; ++x)
-        {
-            for (int y = 0; y < GridDimension.y; ++y)
-            {
-                onCell.Invoke(new Vector3Int(x, y));
-            }
-        }
-    }
-
-
-    public bool DoDebugDraw = true;
-    public bool DrawGrid = false;
-    public bool DrawWalkable = false;
-    public bool DrawUnwalkable = true;
-
 
 #if UNITY_EDITOR
-
-    public Mesh DebugGridMesh;
 
     private void OnDrawGizmos()
     {
