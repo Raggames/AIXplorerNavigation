@@ -14,14 +14,27 @@ The idea is that we won't need the level to be baked before the agents start nav
 <b> LOGIC </b>
 
 When the agent wants to navigate to any position on the terrain, he will firstly try to compute a pathfinding solution to it, with the GridNodes that the NavigationCore already knows. 
+
 If the pathfinding find a complete solution (= the start and destination are contained in a linked cloud of GridNodes), it just return the path.
+
 If the pathfinding algorithm don't find a way to the destination, it will look for the closest point he can get (from the destination, wich can be found in the A* Closed Set),
 and then create a path to it (a partial path to destination). 
+
 In that partial path situation, when the agent will have reached that point, he will then bake a small area on this new position, and then retry to execute a pathfinding.
 The process will repeat until the agent found a complete path and achieved his destination. The process can increase the area of exploration if the path is not found, until some limitations
 that can be setted on the NavigationComponent.
 
 The movement of agents is simply made by using a characterController and a patrol behaviour between the path waypoints.
+
+<b> 20 Agents Test </b>
+
+Just popping random moves with 20 agents simultaneously. 
+
+The few framerate loss is due mainly to the Path Gizmos.
+
+The execution of pathfinding is scheduled "one by one" on another thread.
+
+https://github.com/Raggames/AIXplorerNavigation/assets/51744359/01eb8d7d-b024-4834-96db-965dab507c18
 
 <b> CONLUSION ? </b>
 
@@ -37,6 +50,8 @@ In the Sample Scene,
  - click on 'N' to make the agents start navigate to the mouse.
  - click on 'B' to make all agents move randomly.
  - Hold CRTL + Moving mouse allows you to bake the terrain like a brush.
+
+
 
 <b> NEXT ? </b>
 
