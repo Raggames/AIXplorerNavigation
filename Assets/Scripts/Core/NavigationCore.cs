@@ -92,9 +92,7 @@ public class NavigationCore : MonoBehaviour
         int indexZ = y - GridDimension.y;
         var position = new Vector2Int(x, y);
 
-        GridDictionnary.Add(position, new GridNode() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(indexX, indexZ) });
-
-        Stopwatch w = Stopwatch.StartNew();
+        GridDictionnary.Add(position, new GridNode() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(x, y) });
 
         RaycastHit hit;
         if (Physics.SphereCast(GridDictionnary[position].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit, Mathf.Infinity, LayerMask.GetMask("Default", "Obstacle")))
@@ -149,29 +147,31 @@ public class NavigationCore : MonoBehaviour
         return nodes;
     }
 
-    public void CreatePotentialNodesInRange(Vector3 position, float range = 5)
+    public void CreatePotentialNodesInRange(Vector3 position, int range = 5)
     {
         float rangeSquared = range * range;
         position.y = 0;
 
-        for (int x = 0; x < 2 * GridDimension.x; ++x)
-        {
-            for (int y = 0; y < 2 * GridDimension.y; ++y)
-            {
-                if (!GridDictionnary.ContainsKey(new Vector2Int(x, y)))
-                //if (_grid[x, y] == null)
-                {
-                    int indexX = x - GridDimension.x;
-                    int indexZ = y - GridDimension.y;
 
-                    Vector3 gridWorldPosition = GridToWorldPositionFlattened(indexX, indexZ);
+        Vector2Int gridPosition = WorldToGridPosition(position);
+
+        for (int x = -range; x < range; ++x)
+        {
+            for (int y = -range; y < range; ++y)
+            {
+
+                if (!GridDictionnary.ContainsKey(new Vector2Int(gridPosition.x + x, gridPosition.y + y)))
+                {
+                    Vector3 gridWorldPosition = GridToWorldPositionFlattened(gridPosition.x + x, gridPosition.y + y);
+
                     if ((gridWorldPosition - position).sqrMagnitude <= rangeSquared)
                     {
-                        CreateNodeOnPosition(x, y);
+                        CreateNodeOnPosition(gridPosition.x + x, gridPosition.y + y);
                     }
                 }
             }
         }
+        
     }
 
     public GridNode FindClosestNodeFromList(List<GridNode> input, GridNode target)
@@ -191,13 +191,8 @@ public class NavigationCore : MonoBehaviour
     }
 
     public Vector3 GridToWorldPositionFlattened(int x, int z)
-    {
-        int indexX = x + GridDimension.x;
-        int indexZ = z + GridDimension.y;
-
-        Vector3 centerVector = new Vector3(GridDimension.x, 0, GridDimension.y) * NodeRadius;
-
-        return new Vector3(transform.position.x, 0, transform.position.z) - centerVector + new Vector3(indexX * NodeRadius, 0, indexZ * NodeRadius);
+    {       
+        return new Vector3(x * NodeRadius, 0, z * NodeRadius);
     }
 
     /// <summary>
@@ -207,15 +202,12 @@ public class NavigationCore : MonoBehaviour
     /// <returns></returns>
     public Vector2Int WorldToGridPosition(Vector3 position)
     {
-        float percentX = (-transform.position.x + position.x + (GridDimension.x * 2 * NodeRadius) / 2) / (GridDimension.x * 2 * NodeRadius);
-        float percentY = (-transform.position.z + position.z + (GridDimension.y * 2 * NodeRadius) / 2) / (GridDimension.y * 2 * NodeRadius);
-
-        percentX = Mathf.Clamp01(percentX);
-        percentY = Mathf.Clamp01(percentY);
+        float x = position.x / NodeRadius;
+        float z = position.z / NodeRadius;
 
         return new Vector2Int(
-            Mathf.RoundToInt((GridDimension.x * 2) * percentX),
-            Mathf.RoundToInt((GridDimension.y * 2) * percentY));
+            Mathf.RoundToInt(x),
+            Mathf.RoundToInt(z));
     }
 
     /// <summary>
@@ -234,20 +226,9 @@ public class NavigationCore : MonoBehaviour
 
     public bool IsInGrid(Vector3Int position)
     {
-        return position.x >= 0 && position.x < GridDimension.x * 2
-            && position.z >= 0 && position.z < GridDimension.y * 2;
+        return position.x >= -GridDimension.x * 2 && position.x < GridDimension.x * 2
+            && position.z >= -GridDimension.y * 2 && position.z < GridDimension.y * 2;
         //&& position.z >= 0 && position.z < GridDimension.x;
-    }
-
-    public bool IsWorldPositionInGrid(Vector3 worldPosition, float margin = 0)
-    {
-        float percentX = (-transform.position.x + worldPosition.x + (GridDimension.x * NodeRadius) / 2) / (GridDimension.x * NodeRadius);
-        float percentY = (-transform.position.z + worldPosition.z + (GridDimension.y * NodeRadius) / 2) / (GridDimension.y * NodeRadius);
-        //float percentZ = (-transform.position.z + worldPosition.z + (GridDimension.z * CellDimension) / 2) / (GridDimension.z * CellDimension);
-
-        return percentX - margin >= 0 && percentX + margin <= 1
-            && percentY - margin >= 0 && percentY + margin <= 1;
-        //&& percentZ - margin >= 00 && percentY + margin <= 1;
     }
 
     public Vector3Int GetDirection(Vector3Int posA, Vector3Int posB)
@@ -269,31 +250,6 @@ public class NavigationCore : MonoBehaviour
         }
 
         return directionnal;
-    }
-
-    public static Vector3Int GetQuarterDirection(Vector3 posA, Vector3 posB)
-    {
-        Vector3 directionnal = posB - posA;
-        int x = 0;
-        int y = 0;
-        int z = 0;
-
-        if (directionnal.x != 0)
-        {
-            x = Mathf.Abs(directionnal.x) > Mathf.Abs(directionnal.z) ? (int)Mathf.Sign(directionnal.x) : 0;
-        }
-
-        if (directionnal.y != 0)
-        {
-            y = (int)Mathf.Sign(directionnal.y);
-        }
-
-        if (directionnal.z != 0)
-        {
-            z = Mathf.Abs(directionnal.z) > Mathf.Abs(directionnal.x) ? (int)Mathf.Sign(directionnal.z) : 0;
-        }
-
-        return new Vector3Int(x, y, z);
     }
 
     public static int GetManhattanDistance(Vector3Int from, Vector3Int to)
@@ -324,21 +280,19 @@ public class NavigationCore : MonoBehaviour
         positions[5] = from.Position + new Vector3Int(1, 0, -1);
         positions[6] = from.Position + new Vector3Int(1, 0, 1);
         positions[7] = from.Position + new Vector3Int(-1, 0, -1);
+
         AddNeighbours(neighbours, positions);
         return neighbours;
     }
 
-    private void AddNeighbours(List<Atomix.Pathfinding.GridNode> neighbours, Vector3Int[] positions)
+    private void AddNeighbours(List<GridNode> neighbours, Vector3Int[] positions)
     {
         for (int i = 0; i < positions.Length; ++i)
         {
-            if (IsInGrid(positions[i]))
+            GridNode node = null;
+            if (GridDictionnary.TryGetValue(new Vector2Int(positions[i].x, positions[i].z), out node))
             {
-                GridNode node = null;
-                if (GridDictionnary.TryGetValue(new Vector2Int(positions[i].x, positions[i].z), out node))
-                {
-                    neighbours.Add(node);
-                }
+                neighbours.Add(node);
             }
         }
     }

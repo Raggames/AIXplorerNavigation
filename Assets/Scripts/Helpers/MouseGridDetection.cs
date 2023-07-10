@@ -12,7 +12,7 @@ namespace Atomix.Helpers
 {
     public class MouseGridDetection : MonoBehaviour
     {
-        public float DetectionRadius = 5;
+        public int DetectionRadius = 5;
         public List<Vector2Int> currentNodesInRadius = new List<Vector2Int>();
 
         private NavigationCore _navigationCore;

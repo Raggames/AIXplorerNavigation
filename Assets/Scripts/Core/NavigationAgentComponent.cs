@@ -162,7 +162,17 @@ namespace Atomix.Core
                                 // Go at destination, then compute grid in detection radius and redo until arrived at destination
                                 StartCoroutine(NavigationRoutine(_pathList, (result) =>
                                 {
-                                    OnEndPartialPath(destination, arrivedAtDestination, totalIterations, noPathFoundIterations);
+                                    // If the navigation routine returns false, it means the agent is stuck somewhere, so we prefer to abort the navigation completely rather than
+                                    // trying again and again to pathfind and go to a destination that is currently impossible to achieve for some reason.
+                                    if (!result)
+                                    {
+                                        Debug.LogError("Navigation routine unable to achieve given destination. Abort navigation.");
+                                        _onArrivedEndPath.Invoke(result);
+                                    }
+                                    else
+                                    {
+                                        OnEndPartialPath(destination, arrivedAtDestination, totalIterations, noPathFoundIterations);
+                                    }
                                 }));
                             }
                         }
@@ -186,7 +196,7 @@ namespace Atomix.Core
                                 // Probly no path found to destination. Search around 
                                 Debug.Log("Path count was 0. Try search bigger area and retry." + totalIterations + " " + _currentDistance);
 
-                                NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
+                                NavigationCore.CreatePotentialNodesInRange(transform.position, Mathf.RoundToInt(DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier));
                                 SearchAreaMultiplier++;
                                 noPathFoundIterations++;
                                 NavigateTo(destination, arrivedAtDestination, SearchAreaMultiplier, totalIterations, noPathFoundIterations);
@@ -230,7 +240,7 @@ namespace Atomix.Core
 
                     Debug.Log("Arrived at end of partial path. Analyse navmesh and retry." + searchIterations + " " + _currentDistance);
 
-                    NavigationCore.CreatePotentialNodesInRange(transform.position, DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier);
+                    NavigationCore.CreatePotentialNodesInRange(transform.position, Mathf.RoundToInt(DetectionRadius + DetectionAreaBonus * SearchAreaMultiplier));
 
                     SearchAreaMultiplier++;
 
