@@ -9,7 +9,9 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 using UnityEditor.Experimental.GraphView;
-
+using UnityEngine.Rendering.UI;
+using Unity.Burst.CompilerServices;
+using System.Diagnostics;
 
 public static class NavigationCoreEventHandler
 {
@@ -73,6 +75,17 @@ public class NavigationCore : MonoBehaviour
         return node;
     }
 
+    /// <summary>
+    /// Returns the closest node from a given world position. 
+    /// The node will be computed if it doesn't exists yet.
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
+    public GridNode GetNodeByWorldPosition(Vector3 position)
+    {
+        return GetNodeByPosition(WorldToGridPosition(position), true);
+    }
+
     public GridNode CreateNodeOnPosition(int x, int y)
     {
         int indexX = x - GridDimension.x;
@@ -80,7 +93,8 @@ public class NavigationCore : MonoBehaviour
         var position = new Vector2Int(x, y);
 
         GridDictionnary.Add(position, new GridNode() { Position = new Vector3Int(x, 0, y), WorldPosition = GridToWorldPositionFlattened(indexX, indexZ) });
-        //_grid[x, y] = GridDictionnary[new Vector2Int(x, y)];
+
+        Stopwatch w = Stopwatch.StartNew();
 
         RaycastHit hit;
         if (Physics.SphereCast(GridDictionnary[position].WorldPosition + Vector3.up * 1000, DetectionThickness, Vector3.down, out hit, Mathf.Infinity, LayerMask.GetMask("Default", "Obstacle")))
@@ -89,12 +103,10 @@ public class NavigationCore : MonoBehaviour
 
             if ((WalkableLayers & (1 << hit.collider.gameObject.layer)) != 0)
             {
-                // yup
                 GridDictionnary[position].NodeState = NodeState.Walkable;
             }
             else
             {
-                // nope
                 GridDictionnary[position].NodeState = NodeState.Unwalkable;
             }
         }
@@ -112,19 +124,6 @@ public class NavigationCore : MonoBehaviour
         GridDictionnary[coordinates].NodeState = nodeState;
         NavigationCoreEventHandler.NodeStateUpdateRequest(this, GridDictionnary[coordinates]);
     }
-
-    /*public List<Node> FindNodesInRange(Vector3 position, float range = 5)
-    {
-        List<Node> nodes = new List<Node>();
-
-        float rangeSquared = range * range;
-        foreach (var cell in _navigationGrid)
-        {
-            if ((cell.Position - position).sqrMagnitude <= rangeSquared)
-                nodes.Add(cell);
-        }
-        return nodes;
-    }*/
 
     public List<Vector2Int> FindNodesPositionsInRange(Vector3 position, float range = 5, bool toGround = false)
     {
@@ -196,34 +195,41 @@ public class NavigationCore : MonoBehaviour
         int indexX = x + GridDimension.x;
         int indexZ = z + GridDimension.y;
 
-        /* if (_grid[indexX, indexZ] != null)
-             return _grid[indexX, indexZ].WorldPosition;*/
-
         Vector3 centerVector = new Vector3(GridDimension.x, 0, GridDimension.y) * NodeRadius;
 
-        return new Vector3(transform.position.x, 0, transform.position.z)
-            - centerVector
-            + new Vector3(indexX * NodeRadius,
-            0,
-            indexZ * NodeRadius);//gridPosition.z * CellDimension + ((float)CellDimension / 2))- (GridDimension * CellDimension / 2);
+        return new Vector3(transform.position.x, 0, transform.position.z) - centerVector + new Vector3(indexX * NodeRadius, 0, indexZ * NodeRadius);
     }
 
-    public float percentX;
-    public float percentY;
+    /// <summary>
+    /// Returns the closest grid position from a given world position
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
     public Vector2Int WorldToGridPosition(Vector3 position)
     {
-        percentX = (-transform.position.x + position.x + (GridDimension.x * 2 * NodeRadius) / 2) / (GridDimension.x * 2 * NodeRadius);
-        percentY = (-transform.position.z + position.z + (GridDimension.y * 2 * NodeRadius) / 2) / (GridDimension.y * 2 * NodeRadius);
-        //float percentZ = (-transform.position.z + position.z + (GridDimension * CellDimension) / 2) / (GridDimension.z * CellDimension);
+        float percentX = (-transform.position.x + position.x + (GridDimension.x * 2 * NodeRadius) / 2) / (GridDimension.x * 2 * NodeRadius);
+        float percentY = (-transform.position.z + position.z + (GridDimension.y * 2 * NodeRadius) / 2) / (GridDimension.y * 2 * NodeRadius);
 
         percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
-        //percentZ = Mathf.Clamp01(percentZ);
 
         return new Vector2Int(
             Mathf.RoundToInt((GridDimension.x * 2) * percentX),
             Mathf.RoundToInt((GridDimension.y * 2) * percentY));
-        //Mathf.RoundToInt((GridDimension.z - 1) * percentZ));
+    }
+
+    /// <summary>
+    /// Returns the real world position of the closest grid node from a given world position.
+    /// The method will compute the gridNode if it doesn't exists yet
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
+    public Vector3 WorldToGridWorldPosition(Vector3 position)
+    {
+        Vector2Int closestGridPosition = WorldToGridPosition(position);
+
+        GridNode gridNode = GetNodeByPosition(closestGridPosition, true);
+        return gridNode.WorldPosition;
     }
 
     public bool IsInGrid(Vector3Int position)
@@ -356,17 +362,19 @@ public class NavigationCore : MonoBehaviour
 
 
 #if UNITY_EDITOR
+
+    public Mesh DebugGridMesh;
+
     private void OnDrawGizmos()
     {
         if (DoDebugDraw)
         {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(transform.position, new Vector3(GridDimension.x * 2 * NodeRadius, 100, GridDimension.y * 2 * NodeRadius));
+
             if (GridDictionnary != null)
             {
-                Gizmos.color = Color.yellow;
-                //Gizmos.DrawWireCube(transform.position, GridDimension * CellDimension));
-
-
-                foreach(var n in GridDictionnary)
+                foreach (var n in GridDictionnary)
                 {
                     if (n.Value != null)
                     {
@@ -375,25 +383,17 @@ public class NavigationCore : MonoBehaviour
                             if (DrawWalkable)
                             {
                                 Gizmos.color = Color.green;
-                                Gizmos.DrawSphere(n.Value.WorldPosition, .5f);
+                                Gizmos.DrawWireSphere(n.Value.WorldPosition, DetectionThickness);
                             }
                         }
                         else if (DrawUnwalkable)
                         {
                             Gizmos.color = Color.black;
-                            Gizmos.DrawSphere(n.Value.WorldPosition, .5f);
+                            Gizmos.DrawWireSphere(n.Value.WorldPosition, DetectionThickness);
                         }
                     }
-                   /* else
-                    {
-                        if (DrawGrid)
-                        {
-                            Gizmos.color = Color.red;
-                            Gizmos.DrawSphere(GridToWorldPositionFlattened(x, y), .5f);
-                        }
-                    }*/
-                }               
-                
+                }
+
             }
         }
 
