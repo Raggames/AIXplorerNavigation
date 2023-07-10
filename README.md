@@ -12,6 +12,7 @@ using a modified  A* implementation (originally by Sebastian Lague). The origina
 The idea is that we won't need the level to be baked before the agents start navigates. But it will be baked dynamically, on demand. 
 
 <b> LOGIC </b>
+
 When the agent wants to navigate to any position on the terrain, he will firstly try to compute a pathfinding solution to it, with the GridNodes that the NavigationCore already knows. 
 If the pathfinding find a complete solution (= the start and destination are contained in a linked cloud of GridNodes), it just return the path.
 If the pathfinding algorithm don't find a way to the destination, it will look for the closest point he can get (from the destination, wich can be found in the A* Closed Set),
@@ -23,6 +24,7 @@ that can be setted on the NavigationComponent.
 The movement of agents is simply made by using a characterController and a patrol behaviour between the path waypoints.
 
 <b> CONLUSION ? </b>
+
 This is not a perfect solution that has a major drawback : the use of spherecastings to test the terrain position (walkable/unwalkable). Nevertheless, after some stress testings and by computing 
 the pathfinding on another thread (simply C# Tasks), the solution seems largely acceptable for a small scope / indy game, as it can hanble many dozens of agents without dropping the frame rate.
  
